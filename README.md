@@ -2,7 +2,7 @@
 
 MoneyManager is a modern native Android application designed to track multi-asset finances (Fiat, Crypto, Gold) with an **Offline-First** approach. Built using **Clean Architecture**, **Jetpack Compose**, and **MVVM** principles.
 
-![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-purple?logo=kotlin)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-purple?logo=kotlin)
 ![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-blue?logo=android)
 ![Architecture](https://img.shields.io/badge/Arch-Clean%20Architecture-green)
 
