@@ -1,0 +1,675 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "e11704461e97dc7c521ef3210731d6f8",
+    "entities": [
+      {
+        "tableName": "assets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`assetId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `assetName` TEXT NOT NULL, `assetType` TEXT NOT NULL, `currentBalance` REAL NOT NULL, `balanceUnit` TEXT NOT NULL, `currencySymbol` TEXT NOT NULL, `accountNumber` TEXT, `bankName` TEXT, `lastPriceUpdate` REAL, `priceSource` TEXT, `isActive` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL, `lastModified` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "assetId",
+            "columnName": "assetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetName",
+            "columnName": "assetName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assetType",
+            "columnName": "assetType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentBalance",
+            "columnName": "currentBalance",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "balanceUnit",
+            "columnName": "balanceUnit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currencySymbol",
+            "columnName": "currencySymbol",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accountNumber",
+            "columnName": "accountNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bankName",
+            "columnName": "bankName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastPriceUpdate",
+            "columnName": "lastPriceUpdate",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "priceSource",
+            "columnName": "priceSource",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sortOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "lastModified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "assetId"
+          ]
+        }
+      },
+      {
+        "tableName": "categories",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`categoryId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryName` TEXT NOT NULL, `categoryDescription` TEXT, `isIncomeCategory` INTEGER NOT NULL, `categoryColor` INTEGER NOT NULL, `categoryIcon` TEXT NOT NULL, `isSystemCategory` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, `usageCount` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryName",
+            "columnName": "categoryName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryDescription",
+            "columnName": "categoryDescription",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isIncomeCategory",
+            "columnName": "isIncomeCategory",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryColor",
+            "columnName": "categoryColor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryIcon",
+            "columnName": "categoryIcon",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSystemCategory",
+            "columnName": "isSystemCategory",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usageCount",
+            "columnName": "usageCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "categoryId"
+          ]
+        }
+      },
+      {
+        "tableName": "transactions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transactionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fromAssetId` INTEGER NOT NULL, `toAssetId` INTEGER, `categoryId` INTEGER, `transactionType` TEXT NOT NULL, `transactionCategory` TEXT NOT NULL, `transactionAmount` REAL NOT NULL, `transactionCurrency` TEXT NOT NULL, `convertedAmountIDR` REAL NOT NULL, `exchangeRate` REAL NOT NULL, `transactionTitle` TEXT NOT NULL, `transactionNote` TEXT, `transactionLocation` TEXT, `receiptImagePath` TEXT, `transactionDate` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL, FOREIGN KEY(`fromAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`toAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "transactionId",
+            "columnName": "transactionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromAssetId",
+            "columnName": "fromAssetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toAssetId",
+            "columnName": "toAssetId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "transactionType",
+            "columnName": "transactionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionCategory",
+            "columnName": "transactionCategory",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionAmount",
+            "columnName": "transactionAmount",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionCurrency",
+            "columnName": "transactionCurrency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "convertedAmountIDR",
+            "columnName": "convertedAmountIDR",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exchangeRate",
+            "columnName": "exchangeRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionTitle",
+            "columnName": "transactionTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transactionNote",
+            "columnName": "transactionNote",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transactionLocation",
+            "columnName": "transactionLocation",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "receiptImagePath",
+            "columnName": "receiptImagePath",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transactionDate",
+            "columnName": "transactionDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "transactionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transactions_fromAssetId",
+            "unique": false,
+            "columnNames": [
+              "fromAssetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_fromAssetId` ON `${TABLE_NAME}` (`fromAssetId`)"
+          },
+          {
+            "name": "index_transactions_toAssetId",
+            "unique": false,
+            "columnNames": [
+              "toAssetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_toAssetId` ON `${TABLE_NAME}` (`toAssetId`)"
+          },
+          {
+            "name": "index_transactions_categoryId",
+            "unique": false,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "assets",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fromAssetId"
+            ],
+            "referencedColumns": [
+              "assetId"
+            ]
+          },
+          {
+            "table": "assets",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "toAssetId"
+            ],
+            "referencedColumns": [
+              "assetId"
+            ]
+          },
+          {
+            "table": "categories",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoryId"
+            ],
+            "referencedColumns": [
+              "categoryId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "budgets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`budgetId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `budgetCategoryId` INTEGER NOT NULL, `budgetName` TEXT NOT NULL, `budgetLimit` REAL NOT NULL, `budgetPeriod` TEXT NOT NULL, `budgetMonth` INTEGER NOT NULL, `budgetYear` INTEGER NOT NULL, `currentSpent` REAL NOT NULL, `isActive` INTEGER NOT NULL, `alertThreshold` REAL NOT NULL, `createdDate` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, FOREIGN KEY(`budgetCategoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "fields": [
+          {
+            "fieldPath": "budgetId",
+            "columnName": "budgetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetCategoryId",
+            "columnName": "budgetCategoryId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetName",
+            "columnName": "budgetName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetLimit",
+            "columnName": "budgetLimit",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetPeriod",
+            "columnName": "budgetPeriod",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetMonth",
+            "columnName": "budgetMonth",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "budgetYear",
+            "columnName": "budgetYear",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentSpent",
+            "columnName": "currentSpent",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "alertThreshold",
+            "columnName": "alertThreshold",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "budgetId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_budgets_budgetCategoryId",
+            "unique": false,
+            "columnNames": [
+              "budgetCategoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_budgets_budgetCategoryId` ON `${TABLE_NAME}` (`budgetCategoryId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categories",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "budgetCategoryId"
+            ],
+            "referencedColumns": [
+              "categoryId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "price_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`priceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `currencyCode` TEXT NOT NULL, `priceInIDR` REAL NOT NULL, `priceInUSD` REAL NOT NULL, `priceSource` TEXT NOT NULL, `priceDate` INTEGER NOT NULL, `isLatest` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "priceId",
+            "columnName": "priceId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currencyCode",
+            "columnName": "currencyCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceInIDR",
+            "columnName": "priceInIDR",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceInUSD",
+            "columnName": "priceInUSD",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceSource",
+            "columnName": "priceSource",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priceDate",
+            "columnName": "priceDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isLatest",
+            "columnName": "isLatest",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "priceId"
+          ]
+        }
+      },
+      {
+        "tableName": "transfer_pairs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`pairId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fromAssetId` INTEGER NOT NULL, `toAssetId` INTEGER NOT NULL, `pairName` TEXT NOT NULL, `lastUsed` INTEGER NOT NULL, `usageCount` INTEGER NOT NULL, `isQuickTransfer` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL, FOREIGN KEY(`fromAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`toAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "pairId",
+            "columnName": "pairId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromAssetId",
+            "columnName": "fromAssetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toAssetId",
+            "columnName": "toAssetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pairName",
+            "columnName": "pairName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUsed",
+            "columnName": "lastUsed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usageCount",
+            "columnName": "usageCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isQuickTransfer",
+            "columnName": "isQuickTransfer",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "pairId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transfer_pairs_fromAssetId",
+            "unique": false,
+            "columnNames": [
+              "fromAssetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transfer_pairs_fromAssetId` ON `${TABLE_NAME}` (`fromAssetId`)"
+          },
+          {
+            "name": "index_transfer_pairs_toAssetId",
+            "unique": false,
+            "columnNames": [
+              "toAssetId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transfer_pairs_toAssetId` ON `${TABLE_NAME}` (`toAssetId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "assets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fromAssetId"
+            ],
+            "referencedColumns": [
+              "assetId"
+            ]
+          },
+          {
+            "table": "assets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "toAssetId"
+            ],
+            "referencedColumns": [
+              "assetId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "backup_metadata",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`backupId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `backupName` TEXT NOT NULL, `backupPath` TEXT NOT NULL, `backupType` TEXT NOT NULL, `backupSize` INTEGER NOT NULL, `totalAssets` INTEGER NOT NULL, `totalTransactions` INTEGER NOT NULL, `backupDate` INTEGER NOT NULL, `isAutoBackup` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "backupId",
+            "columnName": "backupId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupName",
+            "columnName": "backupName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupPath",
+            "columnName": "backupPath",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupType",
+            "columnName": "backupType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupSize",
+            "columnName": "backupSize",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAssets",
+            "columnName": "totalAssets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalTransactions",
+            "columnName": "totalTransactions",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "backupDate",
+            "columnName": "backupDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isAutoBackup",
+            "columnName": "isAutoBackup",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "backupId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e11704461e97dc7c521ef3210731d6f8')"
+    ]
+  }
+}
