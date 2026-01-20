@@ -1,16 +1,17 @@
-package com.example.moneymanager.presentation.ui.screen
+package com.example.moneymanager.presentation.dashboard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,10 +20,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -32,15 +42,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneymanager.R
-import com.example.moneymanager.presentation.ui.component.ErrorContent
-import com.example.moneymanager.presentation.ui.component.LoadingContent
-import com.example.moneymanager.presentation.ui.component.TransactionItem
-import com.example.moneymanager.presentation.ui.state.DashboardUiState
-import com.example.moneymanager.presentation.ui.theme.expense
-import com.example.moneymanager.presentation.ui.theme.income
-import com.example.moneymanager.presentation.viewmodel.DashboardViewModel
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.moneymanager.domain.model.Transaction
+import com.example.moneymanager.presentation.component.ErrorContent
+import com.example.moneymanager.presentation.component.IncomeExpenseRow
+import com.example.moneymanager.presentation.component.LoadingContent
+import com.example.moneymanager.presentation.component.QuickActionsRow
+import com.example.moneymanager.presentation.component.TotalBalanceCard
+import com.example.moneymanager.presentation.component.TransactionItem
+import com.example.moneymanager.presentation.theme.income
+import kotlinx.coroutines.launch
 
 @Composable
 fun DashboardScreen(
@@ -51,14 +61,33 @@ fun DashboardScreen(
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val deleteMessage = "Transaksi dihapus"
+    val undoLabel = "BATAL"
 
     DashboardContent(
         uiState = uiState,
+        snackbarHostState = snackbarHostState,
         onRetry = { viewModel.retryLoading() },
         onNavigateToAssets = onNavigateToAssets,
         onNavigateToTransactions = onNavigateToTransactions,
         onNavigateToAddTransaction = onNavigateToAddTransaction,
-        onNavigateToSettings = onNavigateToSettings
+        onNavigateToSettings = onNavigateToSettings,
+        onDeleteTransaction = { transaction ->
+            viewModel.deleteTransaction(transaction)
+
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = deleteMessage,
+                    actionLabel = undoLabel,
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    viewModel.restoreTransaction()
+                }
+            }
+        }
     )
 }
 
@@ -66,13 +95,16 @@ fun DashboardScreen(
 @Composable
 private fun DashboardContent(
     uiState: DashboardUiState,
+    snackbarHostState: SnackbarHostState,
     onRetry: () -> Unit,
+    onDeleteTransaction: (Transaction) -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
@@ -117,6 +149,7 @@ private fun DashboardContent(
             else -> {
                 DashboardSuccessContent(
                     uiState = uiState,
+                    onDeleteTransaction = onDeleteTransaction,
                     onNavigateToAssets = onNavigateToAssets,
                     onNavigateToTransactions = onNavigateToTransactions,
                     modifier = Modifier.padding(paddingValues)
@@ -126,9 +159,11 @@ private fun DashboardContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardSuccessContent(
     uiState: DashboardUiState,
+    onDeleteTransaction: (Transaction) -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     modifier: Modifier = Modifier
@@ -174,12 +209,65 @@ private fun DashboardSuccessContent(
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    uiState.recentTransactions.take(3).forEach { transaction ->
-                        TransactionItem(transaction = transaction)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    val recentList = uiState.recentTransactions.take(3)
+
+                    if (recentList.isEmpty()) {
+                        Text(
+                            text = "Belum ada transaksi",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        recentList.forEach { transaction ->
+
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = {
+                                    if (it == SwipeToDismissBoxValue.EndToStart) {
+                                        onDeleteTransaction(transaction)
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                            )
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                enableDismissFromStartToEnd = false,
+                                backgroundContent = {
+                                    val color = MaterialTheme.colorScheme.errorContainer
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color)
+                                            .padding(horizontal = 20.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Hapus",
+                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                }
+                            ) {
+                                TransactionItem(
+                                    transaction = transaction,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .padding(horizontal = 16.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -187,136 +275,20 @@ private fun DashboardSuccessContent(
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-private fun TotalBalanceCard(balance: Double) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.total_balance),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = formatCurrency(balance),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-private fun IncomeExpenseRow(income: Double, expense: Double) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.income.copy(alpha = 0.1f)
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.income),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.income
-                )
-                Text(
-                    text = formatCurrency(income),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.income
-                )
-            }
-        }
-
-        Card(
-            modifier = Modifier.weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.expense.copy(alpha = 0.1f)
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = stringResource(R.string.expense),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.expense
-                )
-                Text(
-                    text = formatCurrency(expense),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.expense
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickActionsRow(
-    onNavigateToAssets: () -> Unit,
-    onNavigateToTransactions: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = onNavigateToAssets,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.view_assets))
-        }
-        Button(
-            onClick = onNavigateToTransactions,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.transactions))
-        }
-    }
-}
-
-private fun formatCurrency(amount: Double): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID"))
-    return formatter.format(amount)
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun DashboardSuccessContentPreview() {
+private fun DashboardPreview() {
     MaterialTheme {
         DashboardSuccessContent(
             uiState = DashboardUiState(
-                isLoading = false,
-                error = null,
                 totalBalance = 1500000.0,
-                monthlyIncome = 2000000.0,
-                monthlyExpense = 500000.0,
+                monthlyIncome = 5000000.0,
+                monthlyExpense = 3500000.0,
                 recentTransactions = emptyList()
             ),
+            onDeleteTransaction = {},
             onNavigateToAssets = {},
-            onNavigateToTransactions = {},
-            modifier = Modifier
+            onNavigateToTransactions = {}
         )
     }
 }

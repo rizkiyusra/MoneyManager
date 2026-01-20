@@ -27,7 +27,6 @@ class BudgetRepositoryImpl @Inject constructor(
     override suspend fun deleteBudget(budget: Budget) =
         dao.deleteBudget(budget.toEntity())
 
-    // Mapping Entity -> Domain
     private fun BudgetEntity.toDomain() = Budget(
         id = budgetId,
         categoryId = budgetCategoryId,
@@ -36,11 +35,11 @@ class BudgetRepositoryImpl @Inject constructor(
         period = budgetPeriod,
         month = budgetMonth,
         year = budgetYear,
-        currentSpent = currentSpent,
+        currentSpent = 0.0,
         isActive = isActive,
         alertThreshold = alertThreshold,
         createdDate = createdDate,
-        lastUpdated = lastUpdated
+        lastUpdated = System.currentTimeMillis()
     )
 
     // Mapping Domain -> Entity
@@ -52,10 +51,8 @@ class BudgetRepositoryImpl @Inject constructor(
         budgetPeriod = period,
         budgetMonth = month,
         budgetYear = year,
-        currentSpent = currentSpent,
         isActive = isActive,
         alertThreshold = alertThreshold,
         createdDate = createdDate,
-        lastUpdated = lastUpdated
     )
 }

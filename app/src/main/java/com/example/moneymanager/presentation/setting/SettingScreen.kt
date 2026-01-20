@@ -1,4 +1,4 @@
-package com.example.moneymanager.presentation.ui.screen
+package com.example.moneymanager.presentation.setting
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

@@ -11,22 +11,27 @@ import com.example.moneymanager.data.local.category.CategoryEntity
             entity = AssetEntity::class,
             parentColumns = ["assetId"],
             childColumns = ["fromAssetId"],
-            onDelete = ForeignKey.NO_ACTION
+            onDelete = ForeignKey.RESTRICT
         ),
         ForeignKey(
             entity = AssetEntity::class,
             parentColumns = ["assetId"],
             childColumns = ["toAssetId"],
-            onDelete = ForeignKey.NO_ACTION
+            onDelete = ForeignKey.RESTRICT
         ),
         ForeignKey(
             entity = CategoryEntity::class,
             parentColumns = ["categoryId"],
             childColumns = ["categoryId"],
-            onDelete = ForeignKey.NO_ACTION
+            onDelete = ForeignKey.RESTRICT
         )
     ],
-    indices = [Index("fromAssetId"), Index("toAssetId"), Index("categoryId")]
+    indices = [
+        Index("fromAssetId"),
+        Index("toAssetId"),
+        Index("categoryId"),
+        Index("transactionDate"),
+    ]
 )
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val transactionId: Int = 0,
@@ -34,7 +39,6 @@ data class TransactionEntity(
     val toAssetId: Int? = null,
     val categoryId: Int? = null,
     val transactionType: String,
-    val transactionCategory: String,
     val transactionAmount: Double,
     val transactionCurrency: String,
     val convertedAmountIDR: Double,

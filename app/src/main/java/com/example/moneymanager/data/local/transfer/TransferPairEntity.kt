@@ -22,7 +22,10 @@ import com.example.moneymanager.data.local.asset.AssetEntity
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("fromAssetId"), Index("toAssetId")]
+    indices = [
+        Index("fromAssetId"),
+        Index("toAssetId")
+    ]
 )
 data class TransferPairEntity(
     @PrimaryKey(autoGenerate = true) val pairId: Int = 0,

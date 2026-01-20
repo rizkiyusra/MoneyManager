@@ -12,6 +12,8 @@ MoneyManager is a modern native Android application designed to track multi-asse
 * **Offline-First:** Data is securely stored locally (Room Database) with synchronization capabilities when online.
 * **Financial Analytics:** Visualize Cashflow and Asset Allocation using Interactive Charts.
 * **Secure Backup:** Support for JSON/CSV export and Google Drive integration.
+* **Biometric Lock:** Secure your financial data with native biometric authentication (Fingerprint/FaceID)
+* **Privacy Mode:** Instantly mask sensitive balances and amounts with a single tap for privacy in public spaces
 
 ## 🛠 Tech Stack & Libraries
 * **Language:** Kotlin

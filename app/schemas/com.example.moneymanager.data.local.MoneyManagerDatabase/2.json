@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "e11704461e97dc7c521ef3210731d6f8",
+    "identityHash": "f7f4e24ac61889c4298a73c57d7294c9",
     "entities": [
       {
         "tableName": "assets",
@@ -169,7 +169,7 @@
       },
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transactionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fromAssetId` INTEGER NOT NULL, `toAssetId` INTEGER, `categoryId` INTEGER, `transactionType` TEXT NOT NULL, `transactionCategory` TEXT NOT NULL, `transactionAmount` REAL NOT NULL, `transactionCurrency` TEXT NOT NULL, `convertedAmountIDR` REAL NOT NULL, `exchangeRate` REAL NOT NULL, `transactionTitle` TEXT NOT NULL, `transactionNote` TEXT, `transactionLocation` TEXT, `receiptImagePath` TEXT, `transactionDate` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL, FOREIGN KEY(`fromAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`toAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`transactionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fromAssetId` INTEGER NOT NULL, `toAssetId` INTEGER, `categoryId` INTEGER, `transactionType` TEXT NOT NULL, `transactionAmount` REAL NOT NULL, `transactionCurrency` TEXT NOT NULL, `convertedAmountIDR` REAL NOT NULL, `exchangeRate` REAL NOT NULL, `transactionTitle` TEXT NOT NULL, `transactionNote` TEXT, `transactionLocation` TEXT, `receiptImagePath` TEXT, `transactionDate` INTEGER NOT NULL, `createdDate` INTEGER NOT NULL, FOREIGN KEY(`fromAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`toAssetId`) REFERENCES `assets`(`assetId`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "transactionId",
@@ -196,12 +196,6 @@
           {
             "fieldPath": "transactionType",
             "columnName": "transactionType",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "transactionCategory",
-            "columnName": "transactionCategory",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -296,12 +290,21 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          },
+          {
+            "name": "index_transactions_transactionDate",
+            "unique": false,
+            "columnNames": [
+              "transactionDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_transactionDate` ON `${TABLE_NAME}` (`transactionDate`)"
           }
         ],
         "foreignKeys": [
           {
             "table": "assets",
-            "onDelete": "NO ACTION",
+            "onDelete": "RESTRICT",
             "onUpdate": "NO ACTION",
             "columns": [
               "fromAssetId"
@@ -312,7 +315,7 @@
           },
           {
             "table": "assets",
-            "onDelete": "NO ACTION",
+            "onDelete": "RESTRICT",
             "onUpdate": "NO ACTION",
             "columns": [
               "toAssetId"
@@ -323,7 +326,7 @@
           },
           {
             "table": "categories",
-            "onDelete": "NO ACTION",
+            "onDelete": "RESTRICT",
             "onUpdate": "NO ACTION",
             "columns": [
               "categoryId"
@@ -336,7 +339,7 @@
       },
       {
         "tableName": "budgets",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`budgetId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `budgetCategoryId` INTEGER NOT NULL, `budgetName` TEXT NOT NULL, `budgetLimit` REAL NOT NULL, `budgetPeriod` TEXT NOT NULL, `budgetMonth` INTEGER NOT NULL, `budgetYear` INTEGER NOT NULL, `currentSpent` REAL NOT NULL, `isActive` INTEGER NOT NULL, `alertThreshold` REAL NOT NULL, `createdDate` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, FOREIGN KEY(`budgetCategoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE NO ACTION )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`budgetId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `budgetCategoryId` INTEGER NOT NULL, `budgetName` TEXT NOT NULL, `budgetLimit` REAL NOT NULL, `budgetPeriod` TEXT NOT NULL, `budgetMonth` INTEGER NOT NULL, `budgetYear` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, `alertThreshold` REAL NOT NULL, `createdDate` INTEGER NOT NULL, FOREIGN KEY(`budgetCategoryId`) REFERENCES `categories`(`categoryId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "budgetId",
@@ -381,12 +384,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "currentSpent",
-            "columnName": "currentSpent",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
             "fieldPath": "isActive",
             "columnName": "isActive",
             "affinity": "INTEGER",
@@ -401,12 +398,6 @@
           {
             "fieldPath": "createdDate",
             "columnName": "createdDate",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "lastUpdated",
-            "columnName": "lastUpdated",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -431,7 +422,7 @@
         "foreignKeys": [
           {
             "table": "categories",
-            "onDelete": "NO ACTION",
+            "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
               "budgetCategoryId"
@@ -669,7 +660,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e11704461e97dc7c521ef3210731d6f8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f7f4e24ac61889c4298a73c57d7294c9')"
     ]
   }
 }

@@ -28,7 +28,7 @@ object DatabaseModule {
             MoneyManagerDatabase::class.java,
             "money_manager_db"
         )
-            .fallbackToDestructiveMigration(false)
+            .fallbackToDestructiveMigration(true)
             .build()
     }
 

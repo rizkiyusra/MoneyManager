@@ -13,7 +13,7 @@ import com.example.moneymanager.data.local.category.CategoryEntity
             entity = CategoryEntity::class,
             parentColumns = ["categoryId"],
             childColumns = ["budgetCategoryId"],
-            onDelete = ForeignKey.NO_ACTION
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [Index("budgetCategoryId")]
@@ -26,9 +26,7 @@ data class BudgetEntity(
     val budgetPeriod: String,
     val budgetMonth: Int,
     val budgetYear: Int,
-    val currentSpent: Double = 0.0,
     val isActive: Boolean = true,
     val alertThreshold: Double = 0.8,
-    val createdDate: Long = System.currentTimeMillis(),
-    val lastUpdated: Long = System.currentTimeMillis()
+    val createdDate: Long = System.currentTimeMillis()
 )

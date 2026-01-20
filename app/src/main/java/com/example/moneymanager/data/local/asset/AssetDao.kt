@@ -17,6 +17,9 @@ interface AssetDao {
     @Query("SELECT COUNT(*) FROM assets WHERE assetName = :name AND assetId != :excludeId")
     suspend fun checkAssetNameExists(name: String, excludeId: Int = -1): Int
 
+    @Query("UPDATE assets SET currentBalance = currentBalance + :amount WHERE assetId = :id")
+    suspend fun updateAssetBalance(id: Int, amount: Double)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAsset(asset: AssetEntity): Long
 
