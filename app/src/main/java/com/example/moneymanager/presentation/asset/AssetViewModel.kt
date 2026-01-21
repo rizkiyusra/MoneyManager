@@ -7,6 +7,4 @@ import javax.inject.Inject
 @HiltViewModel
 class AssetViewModel @Inject constructor(
 
-): ViewModel() {
-
-}
+): ViewModel()

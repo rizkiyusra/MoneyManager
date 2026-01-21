@@ -9,28 +9,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.moneymanager.R
+import com.example.moneymanager.presentation.asset.AddEditAssetScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
-import com.example.moneymanager.presentation.transaction.AddTransactionScreen
 import com.example.moneymanager.presentation.setting.SettingsScreen
-
-sealed class Screen(val route: String) {
-    object Dashboard : Screen("dashboard")
-    object Assets : Screen("assets")
-    object Transactions : Screen("transactions")
-    object Settings : Screen("settings")
-    object Budget : Screen("budget")
-    object Reports : Screen("reports")
-
-    object AddTransaction : Screen("add_transaction?transactionId={transactionId}") {
-        fun createRoute(transactionId: Int? = null): String {
-            return if (transactionId != null) {
-                "add_transaction?transactionId=$transactionId"
-            } else {
-                "add_transaction"
-            }
-        }
-    }
-}
+import com.example.moneymanager.presentation.transaction.AddTransactionScreen
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -49,6 +31,9 @@ fun AppNavGraph(navController: NavHostController) {
                 onNavigateToTransactions = {
                     navController.navigate(Screen.Transactions.route)
                 },
+                onNavigateToAddWallet = {
+                    navController.navigate(Screen.AddAsset.route)
+                },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 }
@@ -64,9 +49,19 @@ fun AppNavGraph(navController: NavHostController) {
                 }
             )
         ) {
-            AddTransactionScreen(
-                navController = navController
+            AddTransactionScreen(navController = navController)
+        }
+
+        composable(
+            route = Screen.AddAsset.route,
+            arguments = listOf(
+                navArgument("assetId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
             )
+        ) {
+            AddEditAssetScreen(navController = navController)
         }
 
         composable(Screen.Settings.route) {
@@ -74,7 +69,7 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Assets.route) {
-            Text(text = "Halaman Aset (Coming Soon)")
+            Text(text = "Halaman List Aset (Coming Soon)")
         }
 
         composable(Screen.Transactions.route) {
@@ -84,6 +79,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable(Screen.Budget.route) {
             Text(text = stringResource(R.string.coming_soon))
         }
+
         composable(Screen.Reports.route) {
             Text(text = stringResource(R.string.coming_soon))
         }

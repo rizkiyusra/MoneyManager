@@ -57,6 +57,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
+    onNavigateToAddWallet: () -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
@@ -72,6 +73,7 @@ fun DashboardScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onRetry = ({ viewModel.retryLoading() }),
+        onNavigateToAddWallet = onNavigateToAddWallet,
         onNavigateToAssets = onNavigateToAssets,
         onNavigateToTransactions = onNavigateToTransactions,
         onNavigateToAddTransaction = onNavigateToAddTransaction,
@@ -100,6 +102,7 @@ private fun DashboardContent(
     snackbarHostState: SnackbarHostState,
     onRetry: () -> Unit,
     onDeleteTransaction: (Transaction) -> Unit,
+    onNavigateToAddWallet: () -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
@@ -152,6 +155,7 @@ private fun DashboardContent(
                 DashboardSuccessContent(
                     uiState = uiState,
                     onDeleteTransaction = onDeleteTransaction,
+                    onNavigateToAddWallet = onNavigateToAddWallet,
                     onNavigateToAssets = onNavigateToAssets,
                     onNavigateToTransactions = onNavigateToTransactions,
                     onNavigateToAddTransaction = onNavigateToAddTransaction,
@@ -167,6 +171,7 @@ private fun DashboardContent(
 private fun DashboardSuccessContent(
     uiState: DashboardUiState,
     onDeleteTransaction: (Transaction) -> Unit,
+    onNavigateToAddWallet: () -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
@@ -199,7 +204,7 @@ private fun DashboardSuccessContent(
 
         item {
             QuickActionsRow(
-                onNavigateToAssets = onNavigateToAssets,
+                onNavigateToAssets = onNavigateToAddWallet,
                 onNavigateToTransactions = onNavigateToTransactions
             )
         }
@@ -294,6 +299,7 @@ private fun DashboardPreview() {
                 recentTransactions = emptyList()
             ),
             onDeleteTransaction = {},
+            onNavigateToAddWallet = {},
             onNavigateToAssets = {},
             onNavigateToTransactions = {},
             onNavigateToAddTransaction = {},
