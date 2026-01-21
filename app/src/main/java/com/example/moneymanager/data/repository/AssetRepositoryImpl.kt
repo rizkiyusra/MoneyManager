@@ -1,7 +1,10 @@
 package com.example.moneymanager.data.repository
 
+import androidx.room.withTransaction
+import com.example.moneymanager.data.local.MoneyManagerDatabase
 import com.example.moneymanager.data.local.asset.AssetDao
 import com.example.moneymanager.data.local.asset.AssetEntity
+import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.repository.AssetRepository
 import kotlinx.coroutines.flow.Flow
@@ -9,7 +12,9 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class AssetRepositoryImpl @Inject constructor(
-    private val dao: AssetDao
+    private val dao: AssetDao,
+    private val transactionDao: TransactionDao,
+    private val db: MoneyManagerDatabase
 ) : AssetRepository {
 
     override fun getAssets(): Flow<List<Asset>> =
@@ -23,6 +28,18 @@ class AssetRepositoryImpl @Inject constructor(
 
     override suspend fun checkAssetNameExists(name: String, excludeId: Int): Int =
         dao.checkAssetNameExists(name, excludeId)
+
+    override suspend fun reconcileAssetBalance(id: Int) {
+        db.withTransaction {
+            val totalIncome = transactionDao.getTotalAmountByType(id, "INCOME")
+            val totalExpense = transactionDao.getTotalAmountByType(id, "EXPENSE")
+            val totalTransferIn = transactionDao.getTotalAmountByType(id, "TRANSFER_IN")
+            val totalTransferOut = transactionDao.getTotalAmountByType(id, "TRANSFER_OUT")
+            val realBalance = (totalIncome + totalTransferIn) - (totalExpense + totalTransferOut)
+
+            dao.setAssetBalance(id, realBalance)
+        }
+    }
 
     override suspend fun insertAsset(asset: Asset): Long =
         dao.insertAsset(asset.toEntity())

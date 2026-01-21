@@ -8,5 +8,6 @@ interface TransactionRepository {
     suspend fun getTransactionById(id: Int): Transaction?
     suspend fun insertTransaction(transaction: Transaction): Long
     suspend fun updateTransaction(transaction: Transaction)
+    suspend fun updateTransactionWithLogic(oldTransaction: Transaction, newTransaction: Transaction)
     suspend fun deleteTransaction(transaction: Transaction)
 }

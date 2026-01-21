@@ -45,6 +45,33 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun updateTransaction(transaction: Transaction) =
         transactionDao.updateTransaction(transaction.toEntity())
 
+    override suspend fun updateTransactionWithLogic(
+        oldTransaction: Transaction,
+        newTransaction: Transaction
+    ) {
+        db.withTransaction {
+            val rollbackAmount = when (oldTransaction.type) {
+                TransactionType.INCOME -> -oldTransaction.amount
+                TransactionType.EXPENSE -> oldTransaction.amount
+                TransactionType.TRANSFER_IN -> -oldTransaction.amount
+                TransactionType.TRANSFER_OUT -> oldTransaction.amount
+            }
+
+            assetDao.updateAssetBalance(oldTransaction.fromAssetId, rollbackAmount)
+
+            val newImpactAmount = when (newTransaction.type) {
+                TransactionType.INCOME -> newTransaction.amount
+                TransactionType.EXPENSE -> -newTransaction.amount
+                TransactionType.TRANSFER_IN -> newTransaction.amount
+                TransactionType.TRANSFER_OUT -> -newTransaction.amount
+            }
+
+            assetDao.updateAssetBalance(newTransaction.fromAssetId, newImpactAmount)
+
+            transactionDao.updateTransaction(newTransaction.toEntity())
+        }
+    }
+
     override suspend fun deleteTransaction(transaction: Transaction) {
         db.withTransaction {
             val rollbackAmount = when (transaction.type) {

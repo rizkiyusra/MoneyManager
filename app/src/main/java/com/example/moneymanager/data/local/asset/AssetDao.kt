@@ -20,6 +20,9 @@ interface AssetDao {
     @Query("UPDATE assets SET currentBalance = currentBalance + :amount WHERE assetId = :id")
     suspend fun updateAssetBalance(id: Int, amount: Double)
 
+    @Query("UPDATE assets SET currentBalance = :newBalance WHERE assetId = :id")
+    suspend fun setAssetBalance(id: Int, newBalance: Double)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAsset(asset: AssetEntity): Long
 

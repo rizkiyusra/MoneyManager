@@ -9,6 +9,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY transactionDate DESC")
     fun getTransactions(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT COALESCE(SUM(transactionAmount), 0.0) FROM transactions WHERE fromAssetId = :assetId AND transactionType = :type")
+    suspend fun getTotalAmountByType(assetId: Int, type: String): Double
+
     @Transaction
     @Query("SELECT * FROM transactions ORDER BY transactionDate DESC")
     fun getTransactionsWithDetails(): Flow<List<TransactionWithDetails>>

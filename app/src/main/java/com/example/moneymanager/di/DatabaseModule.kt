@@ -6,6 +6,7 @@ import com.example.moneymanager.data.local.MoneyManagerDatabase
 import com.example.moneymanager.data.local.asset.AssetDao
 import com.example.moneymanager.data.local.backup.BackupMetadataDao
 import com.example.moneymanager.data.local.budget.BudgetDao
+import com.example.moneymanager.data.local.callback.DatabaseSeeder
 import com.example.moneymanager.data.local.category.CategoryDao
 import com.example.moneymanager.data.local.price.PriceHistoryDao
 import com.example.moneymanager.data.local.transaction.TransactionDao
@@ -15,6 +16,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import jakarta.inject.Provider
 import javax.inject.Singleton
 
 @Module
@@ -22,13 +24,17 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideMoneyManagerDatabase(@ApplicationContext context: Context): MoneyManagerDatabase {
+    fun provideMoneyManagerDatabase(
+        @ApplicationContext context: Context,
+        databaseSeeder: Provider<DatabaseSeeder>
+    ): MoneyManagerDatabase {
         return Room.databaseBuilder(
             context,
             MoneyManagerDatabase::class.java,
             "money_manager_db"
         )
             .fallbackToDestructiveMigration(true)
+            .addCallback(databaseSeeder.get())
             .build()
     }
 

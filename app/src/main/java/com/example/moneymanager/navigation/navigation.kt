@@ -40,8 +40,8 @@ fun AppNavGraph(navController: NavHostController) {
     ) {
         composable(Screen.Dashboard.route) {
             DashboardScreen(
-                onNavigateToAddTransaction = {
-                    navController.navigate(Screen.AddTransaction.createRoute(null))
+                onNavigateToAddTransaction = { transactionId ->
+                    navController.navigate(Screen.AddTransaction.createRoute(transactionId))
                 },
                 onNavigateToAssets = {
                     navController.navigate(Screen.Assets.route)

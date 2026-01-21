@@ -1,6 +1,7 @@
 package com.example.moneymanager.presentation.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -57,7 +59,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onNavigateToAddTransaction: () -> Unit,
+    onNavigateToAddTransaction: (Int?) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,7 +71,7 @@ fun DashboardScreen(
     DashboardContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        onRetry = { viewModel.retryLoading() },
+        onRetry = ({ viewModel.retryLoading() }),
         onNavigateToAssets = onNavigateToAssets,
         onNavigateToTransactions = onNavigateToTransactions,
         onNavigateToAddTransaction = onNavigateToAddTransaction,
@@ -100,7 +102,7 @@ private fun DashboardContent(
     onDeleteTransaction: (Transaction) -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onNavigateToAddTransaction: () -> Unit,
+    onNavigateToAddTransaction: (Int?) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     Scaffold(
@@ -120,7 +122,7 @@ private fun DashboardContent(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToAddTransaction,
+                onClick = { onNavigateToAddTransaction(null) },
                 containerColor = MaterialTheme.colorScheme.income
             ) {
                 Icon(
@@ -152,6 +154,7 @@ private fun DashboardContent(
                     onDeleteTransaction = onDeleteTransaction,
                     onNavigateToAssets = onNavigateToAssets,
                     onNavigateToTransactions = onNavigateToTransactions,
+                    onNavigateToAddTransaction = onNavigateToAddTransaction,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -166,6 +169,7 @@ private fun DashboardSuccessContent(
     onDeleteTransaction: (Transaction) -> Unit,
     onNavigateToAssets: () -> Unit,
     onNavigateToTransactions: () -> Unit,
+    onNavigateToAddTransaction: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -216,7 +220,7 @@ private fun DashboardSuccessContent(
                 )
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    val recentList = uiState.recentTransactions.take(3)
+                    val recentList = uiState.recentTransactions
 
                     if (recentList.isEmpty()) {
                         Text(
@@ -228,44 +232,47 @@ private fun DashboardSuccessContent(
                     } else {
                         recentList.forEach { transaction ->
 
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = {
-                                    if (it == SwipeToDismissBoxValue.EndToStart) {
-                                        onDeleteTransaction(transaction)
-                                        true
-                                    } else {
-                                        false
+                            key(transaction.id) {
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = {
+                                        if (it == SwipeToDismissBoxValue.EndToStart) {
+                                            onDeleteTransaction(transaction)
+                                            true
+                                        } else {
+                                            false
+                                        }
                                     }
-                                }
-                            )
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                enableDismissFromStartToEnd = false,
-                                backgroundContent = {
-                                    val color = MaterialTheme.colorScheme.errorContainer
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(color)
-                                            .padding(horizontal = 20.dp),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Hapus",
-                                            tint = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                }
-                            ) {
-                                TransactionItem(
-                                    transaction = transaction,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .padding(horizontal = 16.dp)
                                 )
+
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    enableDismissFromStartToEnd = false,
+                                    backgroundContent = {
+                                        val color = MaterialTheme.colorScheme.errorContainer
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(color)
+                                                .padding(horizontal = 20.dp),
+                                            contentAlignment = Alignment.CenterEnd
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Hapus",
+                                                tint = MaterialTheme.colorScheme.onErrorContainer
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    TransactionItem(
+                                        transaction = transaction,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .padding(horizontal = 16.dp)
+                                            .clickable { onNavigateToAddTransaction(transaction.id) }
+                                    )
+                                }
                             }
                         }
                     }
@@ -288,7 +295,8 @@ private fun DashboardPreview() {
             ),
             onDeleteTransaction = {},
             onNavigateToAssets = {},
-            onNavigateToTransactions = {}
+            onNavigateToTransactions = {},
+            onNavigateToAddTransaction = {},
         )
     }
 }

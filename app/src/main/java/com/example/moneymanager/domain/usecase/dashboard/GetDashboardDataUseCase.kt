@@ -39,8 +39,6 @@ class GetDashboardDataUseCase @Inject constructor(
                 .sumOf { it.amount }
 
             val recentTransactions = transactions
-                .sortedByDescending { it.date }
-                .take(5)
 
             DashboardData(
                 totalBalance = totalBalance,
