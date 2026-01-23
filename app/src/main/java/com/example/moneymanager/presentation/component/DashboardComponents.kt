@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -102,30 +101,6 @@ fun IncomeExpenseRow(income: Double, expense: Double) {
                     color = MaterialTheme.colorScheme.expense
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun QuickActionsRow(
-    onNavigateToAssets: () -> Unit,
-    onNavigateToTransactions: () -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Button(
-            onClick = onNavigateToAssets,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.view_assets))
-        }
-        Button(
-            onClick = onNavigateToTransactions,
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(stringResource(R.string.transactions))
         }
     }
 }

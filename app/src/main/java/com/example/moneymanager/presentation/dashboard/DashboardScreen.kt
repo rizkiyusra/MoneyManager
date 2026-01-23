@@ -13,28 +13,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -48,7 +28,6 @@ import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.presentation.component.ErrorContent
 import com.example.moneymanager.presentation.component.IncomeExpenseRow
 import com.example.moneymanager.presentation.component.LoadingContent
-import com.example.moneymanager.presentation.component.QuickActionsRow
 import com.example.moneymanager.presentation.component.TotalBalanceCard
 import com.example.moneymanager.presentation.component.TransactionItem
 import com.example.moneymanager.presentation.theme.income
@@ -57,9 +36,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
-    onNavigateToAddWallet: () -> Unit,
-    onNavigateToAssets: () -> Unit,
-    onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -73,14 +49,10 @@ fun DashboardScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
         onRetry = ({ viewModel.retryLoading() }),
-        onNavigateToAddWallet = onNavigateToAddWallet,
-        onNavigateToAssets = onNavigateToAssets,
-        onNavigateToTransactions = onNavigateToTransactions,
         onNavigateToAddTransaction = onNavigateToAddTransaction,
         onNavigateToSettings = onNavigateToSettings,
         onDeleteTransaction = { transaction ->
             viewModel.deleteTransaction(transaction)
-
             scope.launch {
                 val result = snackbarHostState.showSnackbar(
                     message = deleteMessage,
@@ -102,9 +74,6 @@ private fun DashboardContent(
     snackbarHostState: SnackbarHostState,
     onRetry: () -> Unit,
     onDeleteTransaction: (Transaction) -> Unit,
-    onNavigateToAddWallet: () -> Unit,
-    onNavigateToAssets: () -> Unit,
-    onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -135,14 +104,10 @@ private fun DashboardContent(
             }
         }
     ) { paddingValues ->
-
         when {
             uiState.isLoading -> {
-                LoadingContent(
-                    modifier = Modifier.padding(paddingValues)
-                )
+                LoadingContent(modifier = Modifier.padding(paddingValues))
             }
-
             uiState.error != null -> {
                 ErrorContent(
                     error = uiState.error,
@@ -150,14 +115,10 @@ private fun DashboardContent(
                     modifier = Modifier.padding(paddingValues)
                 )
             }
-
             else -> {
                 DashboardSuccessContent(
                     uiState = uiState,
                     onDeleteTransaction = onDeleteTransaction,
-                    onNavigateToAddWallet = onNavigateToAddWallet,
-                    onNavigateToAssets = onNavigateToAssets,
-                    onNavigateToTransactions = onNavigateToTransactions,
                     onNavigateToAddTransaction = onNavigateToAddTransaction,
                     modifier = Modifier.padding(paddingValues)
                 )
@@ -171,9 +132,6 @@ private fun DashboardContent(
 private fun DashboardSuccessContent(
     uiState: DashboardUiState,
     onDeleteTransaction: (Transaction) -> Unit,
-    onNavigateToAddWallet: () -> Unit,
-    onNavigateToAssets: () -> Unit,
-    onNavigateToTransactions: () -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -191,21 +149,6 @@ private fun DashboardSuccessContent(
             IncomeExpenseRow(
                 income = uiState.monthlyIncome,
                 expense = uiState.monthlyExpense
-            )
-        }
-
-        item {
-            Text(
-                text = stringResource(R.string.quick_actions),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        item {
-            QuickActionsRow(
-                onNavigateToAssets = onNavigateToAssets,
-                onNavigateToTransactions = onNavigateToTransactions
             )
         }
 
@@ -236,7 +179,6 @@ private fun DashboardSuccessContent(
                         )
                     } else {
                         recentList.forEach { transaction ->
-
                             key(transaction.id) {
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = {
@@ -248,7 +190,6 @@ private fun DashboardSuccessContent(
                                         }
                                     }
                                 )
-
                                 SwipeToDismissBox(
                                     state = dismissState,
                                     enableDismissFromStartToEnd = false,
@@ -299,9 +240,6 @@ private fun DashboardPreview() {
                 recentTransactions = emptyList()
             ),
             onDeleteTransaction = {},
-            onNavigateToAddWallet = {},
-            onNavigateToAssets = {},
-            onNavigateToTransactions = {},
             onNavigateToAddTransaction = {},
         )
     }
