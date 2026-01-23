@@ -10,6 +10,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.moneymanager.R
 import com.example.moneymanager.presentation.asset.AddEditAssetScreen
+import com.example.moneymanager.presentation.asset.AssetListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
 import com.example.moneymanager.presentation.setting.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddTransactionScreen
@@ -69,7 +70,7 @@ fun AppNavGraph(navController: NavHostController) {
         }
 
         composable(Screen.Assets.route) {
-            Text(text = "Halaman List Aset (Coming Soon)")
+            AssetListScreen(navController = navController)
         }
 
         composable(Screen.Transactions.route) {

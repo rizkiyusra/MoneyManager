@@ -204,7 +204,7 @@ private fun DashboardSuccessContent(
 
         item {
             QuickActionsRow(
-                onNavigateToAssets = onNavigateToAddWallet,
+                onNavigateToAssets = onNavigateToAssets,
                 onNavigateToTransactions = onNavigateToTransactions
             )
         }

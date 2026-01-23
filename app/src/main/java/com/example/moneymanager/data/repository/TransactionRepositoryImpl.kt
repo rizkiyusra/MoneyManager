@@ -85,6 +85,10 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun deleteTransactionsByAssetId(assetId: Int) {
+         transactionDao.deleteTransactionsByAssetId(assetId)
+    }
+
     private fun TransactionWithDetails.toDomain(): Transaction {
         return Transaction(
             id = transaction.transactionId,

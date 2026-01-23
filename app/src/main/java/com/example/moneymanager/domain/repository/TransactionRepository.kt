@@ -10,4 +10,5 @@ interface TransactionRepository {
     suspend fun updateTransaction(transaction: Transaction)
     suspend fun updateTransactionWithLogic(oldTransaction: Transaction, newTransaction: Transaction)
     suspend fun deleteTransaction(transaction: Transaction)
+    suspend fun deleteTransactionsByAssetId(assetId: Int)
 }

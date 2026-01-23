@@ -22,31 +22,56 @@ fun AddEditAssetScreen(
     viewModel: AddEditAssetViewModel = hiltViewModel()
 ) {
     val saveState by viewModel.saveState.collectAsState()
+    val isLoading = saveState is Resource.Loading
     val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var initialBalance by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("CASH") }
 
+    var isButtonLocked by remember { mutableStateOf(false) }
+    val assetId = navController.currentBackStackEntry?.arguments?.getInt("assetId") ?: -1
+    val assetDetailState by viewModel.assetDetailState.collectAsState()
+    val isEditMode = assetId != -1
+
     LaunchedEffect(saveState) {
         when (saveState) {
             is Resource.Success -> {
-                Toast.makeText(context, "Wallet Berhasil Dibuat!", Toast.LENGTH_SHORT).show()
+                val message = if (isEditMode) "Wallet Berhasil Diupdate!" else "Wallet Berhasil Dibuat!"
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 viewModel.resetState()
+                isButtonLocked = false
                 navController.popBackStack()
             }
             is Resource.Error -> {
                 Toast.makeText(context, "Error: ${(saveState as Resource.Error).message}", Toast.LENGTH_LONG).show()
                 viewModel.resetState()
+                isButtonLocked = false
             }
             else -> Unit
         }
     }
 
+    LaunchedEffect(key1 = assetId) {
+        if (isEditMode) {
+             viewModel.getAssetById(assetId)
+        }
+    }
+    LaunchedEffect(assetDetailState) {
+         if (assetDetailState is Resource.Success) {
+             val asset = (assetDetailState as Resource.Success).data
+             if (asset != null) {
+                 name = asset.name
+                 selectedType = asset.type
+                 initialBalance = asset.balance.toInt().toString()
+             }
+         }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah Wallet Baru") },
+                title = { Text(if (isEditMode) "Edit Wallet" else "Tambah Wallet Baru") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -87,19 +112,36 @@ fun AddEditAssetScreen(
                 label = { Text("Saldo Awal (Rp)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text("Akan tercatat sebagai transaksi 'Saldo Awal'") }
+                enabled = !isEditMode,
+                supportingText = {
+                    if (isEditMode) Text("Saldo tidak bisa diedit disini")
+                    else Text("Akan tercatat sebagai transaksi 'Saldo Awal'")
+                }
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
-                    viewModel.saveAsset(name, selectedType, initialBalance.toDoubleOrNull() ?: 0.0)
+                    isButtonLocked = true
+                    if (isEditMode) {
+                        viewModel.updateAsset(assetId, name, selectedType)
+                    } else {
+                        val balance = initialBalance.toDoubleOrNull() ?: 0.0
+                        viewModel.saveAsset(name, selectedType, balance)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = name.isNotEmpty()
+                enabled = name.isNotEmpty() && !isLoading && !isButtonLocked
             ) {
-                Text("Simpan Wallet")
+                if (isLoading || isButtonLocked) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Simpan Wallet")
+                }
             }
         }
     }

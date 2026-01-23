@@ -2,13 +2,12 @@ package com.example.moneymanager.domain.usecase.asset
 
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.repository.AssetRepository
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetAssetsUseCase @Inject constructor(
+class UpdateAssetUseCase @Inject constructor(
     private val repository: AssetRepository
 ) {
-    operator fun invoke(): Flow<List<Asset>> {
-        return repository.getAssets()
+    suspend operator fun invoke(asset: Asset) {
+        repository.updateAsset(asset)
     }
 }
