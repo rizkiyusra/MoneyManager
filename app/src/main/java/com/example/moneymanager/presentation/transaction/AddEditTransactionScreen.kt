@@ -22,8 +22,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -79,9 +82,9 @@ import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
-fun AddTransactionScreen(
+fun AddEditTransactionScreen(
     navController: NavController,
-    viewModel: AddTransactionViewModel = hiltViewModel()
+    viewModel: AddEditTransactionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val saveState by viewModel.saveState.collectAsStateWithLifecycle()
@@ -107,7 +110,7 @@ fun AddTransactionScreen(
         }
     }
 
-    AddTransactionContent(
+    AddEditTransactionContent(
         transactionToEdit = transactionToEdit,
         categories = categories ?: emptyList(),
         assets = assets ?: emptyList(),
@@ -123,6 +126,9 @@ fun AddTransactionScreen(
                 fromAssetId = assetId
             )
         },
+        onDeleteClick = {
+            viewModel.deleteTransaction()
+        },
 
         onTypeChanged = { isIncomeCategory ->
             viewModel.loadCategories(isIncomeCategory)
@@ -137,13 +143,14 @@ fun AddTransactionScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTransactionContent(
+fun AddEditTransactionContent(
     transactionToEdit: Transaction?,
     categories: List<Category>,
     assets: List<Asset>,
     selectedCategory: Category?,
     onBackClick: () -> Unit,
     onSaveClick: (Double, String, TransactionType, Long, Int, Int) -> Unit,
+    onDeleteClick: () -> Unit,
     onTypeChanged: (Boolean) -> Unit,
     onCategorySelected: (Category) -> Unit,
     isLoading: Boolean
@@ -157,6 +164,14 @@ fun AddTransactionContent(
     var showCategorySheet by remember { mutableStateOf(false) }
     var assetDropdownExpanded by remember { mutableStateOf(false) }
     var isLocalLocked by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val numberFormat = remember {
+        val localeID = Locale("id", "ID")
+        val formatter = NumberFormat.getNumberInstance(localeID)
+        formatter.maximumFractionDigits = 0
+        formatter
+    }
 
     LaunchedEffect(transactionToEdit, assets) {
         if (selectedAsset == null && assets.isNotEmpty()) {
@@ -164,7 +179,7 @@ fun AddTransactionContent(
         }
 
         transactionToEdit?.let { transaction ->
-            amount = transaction.amount.toRupiah()
+            amount = numberFormat.format(transaction.amount)
             note = transaction.title
             selectedType = transaction.type
             selectedDateMillis = transaction.date
@@ -215,11 +230,24 @@ fun AddTransactionContent(
         )
     }
 
-    val numberFormat = remember {
-        val localeID = Locale("id", "ID")
-        val formatter = NumberFormat.getNumberInstance(localeID)
-        formatter.maximumFractionDigits = 0
-        formatter
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Hapus Transaksi?") },
+            text = { Text("Saldo dompet akan dikembalikan. Data tidak bisa dipulihkan.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        onDeleteClick()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text("Hapus") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Batal") }
+            }
+        )
     }
 
     Scaffold(
@@ -229,6 +257,17 @@ fun AddTransactionContent(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (transactionToEdit != null) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Hapus Transaksi",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             )
@@ -321,7 +360,7 @@ fun AddTransactionContent(
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryEditable, true).
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable, true).
                         fillMaxWidth(),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = assetDropdownExpanded) },
                     colors = OutlinedTextFieldDefaults.colors(
@@ -444,15 +483,16 @@ fun AddTransactionContent(
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun PreviewAddTransactionContent() {
+fun PreviewAddEditTransactionContent() {
     MaterialTheme {
-        AddTransactionContent(
+        AddEditTransactionContent(
             transactionToEdit = null,
             assets = emptyList(),
             categories = emptyList(),
             selectedCategory = null,
             onBackClick = {},
             onSaveClick = { _, _, _, _, _, _ -> },
+            onDeleteClick = {},
             onTypeChanged = {},
             onCategorySelected = {},
             isLoading = false

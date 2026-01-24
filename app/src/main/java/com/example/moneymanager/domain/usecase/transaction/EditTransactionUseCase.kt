@@ -26,15 +26,26 @@ class EditTransactionUseCase @Inject constructor(
             val asset = assetRepository.getAssetById(newTransaction.fromAssetId)
                 ?: return Resource.Error("Aset tidak ditemukan!")
 
-            if (newTransaction.type == TransactionType.EXPENSE) {
-                val virtualBalance = asset.balance + oldTransaction.amount
-
-                if (virtualBalance < newTransaction.amount) {
-                    return Resource.Error("Saldo tidak mencukupi untuk perubahan ini!")
-                }
+            val balanceAfterRollback = when (oldTransaction.type) {
+                TransactionType.INCOME -> asset.balance - oldTransaction.amount
+                TransactionType.EXPENSE -> asset.balance + oldTransaction.amount
+                TransactionType.TRANSFER_OUT -> asset.balance + oldTransaction.amount
+                TransactionType.TRANSFER_IN -> asset.balance - oldTransaction.amount
             }
 
-            transactionRepository.updateTransactionWithLogic(oldTransaction, newTransaction)
+            val finalBalance = when (newTransaction.type) {
+                TransactionType.INCOME -> balanceAfterRollback + newTransaction.amount
+                TransactionType.EXPENSE -> balanceAfterRollback - newTransaction.amount
+                TransactionType.TRANSFER_OUT -> balanceAfterRollback - newTransaction.amount
+                TransactionType.TRANSFER_IN -> balanceAfterRollback + newTransaction.amount
+            }
+
+            if (finalBalance < 0 && newTransaction.type == TransactionType.EXPENSE) {
+                return Resource.Error("Saldo tidak cukup setelah diedit!")
+            }
+
+            assetRepository.updateAsset(asset.copy(balance = finalBalance))
+            transactionRepository.updateTransaction(newTransaction)
 
             Resource.Success(Unit)
 

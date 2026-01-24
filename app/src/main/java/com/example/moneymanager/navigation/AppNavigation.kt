@@ -21,7 +21,7 @@ import com.example.moneymanager.presentation.asset.AddEditAssetScreen
 import com.example.moneymanager.presentation.asset.AssetListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
 import com.example.moneymanager.presentation.setting.SettingsScreen
-import com.example.moneymanager.presentation.transaction.AddTransactionScreen
+import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
 
 @Composable
 fun AppNavigation(
@@ -62,7 +62,7 @@ fun AppNavigation(
         }
 
         composable(Screen.AddTransaction.route) {
-            AddTransactionScreen(navController = navController)
+            AddEditTransactionScreen(navController = navController)
         }
 
         composable(
@@ -74,7 +74,7 @@ fun AppNavigation(
                 }
             )
         ) {
-            AddTransactionScreen(navController = navController)
+            AddEditTransactionScreen(navController = navController)
         }
 
         composable("history") {

@@ -12,6 +12,7 @@ import com.example.moneymanager.domain.repository.TransactionRepository
 import com.example.moneymanager.domain.usecase.asset.GetAssetsUseCase
 import com.example.moneymanager.domain.usecase.category.GetCategoriesUseCase
 import com.example.moneymanager.domain.usecase.transaction.AddTransactionUseCase
+import com.example.moneymanager.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.moneymanager.domain.usecase.transaction.EditTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,9 +22,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AddTransactionViewModel @Inject constructor(
+class AddEditTransactionViewModel @Inject constructor(
     private val addTransactionUseCase: AddTransactionUseCase,
     private val editTransactionUseCase: EditTransactionUseCase,
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getAssetsUseCase: GetAssetsUseCase,
     private val repository: TransactionRepository,
@@ -138,6 +140,17 @@ class AddTransactionViewModel @Inject constructor(
             }
 
             _saveState.value = result
+        }
+    }
+
+    fun deleteTransaction() {
+        val transaction = _transactionToEdit.value
+        if (transaction != null) {
+            viewModelScope.launch {
+                _saveState.value = Resource.Loading()
+                val result = deleteTransactionUseCase(transaction)
+                _saveState.value = result
+            }
         }
     }
 

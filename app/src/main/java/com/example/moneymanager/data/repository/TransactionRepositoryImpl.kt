@@ -63,16 +63,7 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
-        db.withTransaction {
-            val rollbackAmount = when (transaction.type) {
-                TransactionType.INCOME -> -transaction.amount
-                TransactionType.EXPENSE -> transaction.amount
-                else -> 0.0
-            }
-
-            assetDao.updateAssetBalance(transaction.fromAssetId, rollbackAmount)
-            transactionDao.deleteTransaction(transaction.toEntity())
-        }
+        transactionDao.deleteTransaction(transaction.toEntity())
     }
 
     override suspend fun deleteTransactionsByAssetId(assetId: Int) {
