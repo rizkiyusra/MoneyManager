@@ -36,11 +36,7 @@ fun AppNavigation(
         composable(Screen.Dashboard.route) {
             DashboardScreen(
                 onNavigateToAddTransaction = { transactionId ->
-                    if (transactionId != null) {
-                        navController.navigate("add_transaction/$transactionId")
-                    } else {
-                        navController.navigate(Screen.AddTransaction.route)
-                    }
+                    navController.navigate(Screen.AddTransaction.createRoute(transactionId))
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
@@ -70,9 +66,12 @@ fun AppNavigation(
         }
 
         composable(
-            route = "add_transaction/{transactionId}",
+            route = Screen.AddTransaction.route,
             arguments = listOf(
-                navArgument("transactionId") { type = NavType.IntType; defaultValue = -1 }
+                navArgument("transactionId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
             )
         ) {
             AddTransactionScreen(navController = navController)

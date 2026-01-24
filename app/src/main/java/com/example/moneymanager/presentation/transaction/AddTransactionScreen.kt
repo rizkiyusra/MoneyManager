@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -27,12 +28,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -43,7 +48,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,29 +59,37 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneymanager.common.extension.toReadableDate
+import com.example.moneymanager.common.extension.toRupiah
 import com.example.moneymanager.common.state.Resource
+import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Category
 import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.presentation.component.CategorySelectionSheet
 import com.example.moneymanager.presentation.component.getCategoryIcon
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun AddTransactionScreen(
     navController: NavController,
     viewModel: AddTransactionViewModel = hiltViewModel()
 ) {
-    val saveState by viewModel.saveState.collectAsState()
-    val transactionToEdit by viewModel.transactionToEdit.collectAsState()
-    val categories by viewModel.categories.collectAsState()
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
     val context = LocalContext.current
+    val saveState by viewModel.saveState.collectAsStateWithLifecycle()
+
+    val assets by viewModel.assets.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val transactionToEdit by viewModel.transactionToEdit.collectAsStateWithLifecycle()
 
     LaunchedEffect(saveState) {
         when (val state = saveState) {
@@ -98,16 +110,17 @@ fun AddTransactionScreen(
     AddTransactionContent(
         transactionToEdit = transactionToEdit,
         categories = categories ?: emptyList(),
+        assets = assets ?: emptyList(),
         selectedCategory = selectedCategory,
         onBackClick = { navController.popBackStack() },
-        onSaveClick = { amount, note, type, date, categoryId ->
+        onSaveClick = { amount, note, type, date, categoryId, assetId ->
             viewModel.saveTransaction(
                 amount = amount,
                 note = note,
                 type = type,
                 date = date,
                 categoryId = categoryId,
-                fromAssetId = 1
+                fromAssetId = assetId
             )
         },
 
@@ -127,9 +140,10 @@ fun AddTransactionScreen(
 fun AddTransactionContent(
     transactionToEdit: Transaction?,
     categories: List<Category>,
+    assets: List<Asset>,
     selectedCategory: Category?,
     onBackClick: () -> Unit,
-    onSaveClick: (Double, String, TransactionType, Long, Int) -> Unit,
+    onSaveClick: (Double, String, TransactionType, Long, Int, Int) -> Unit,
     onTypeChanged: (Boolean) -> Unit,
     onCategorySelected: (Category) -> Unit,
     isLoading: Boolean
@@ -138,20 +152,36 @@ fun AddTransactionContent(
     var note by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
     var selectedDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var selectedAsset by remember { mutableStateOf<Asset?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCategorySheet by remember { mutableStateOf(false) }
+    var assetDropdownExpanded by remember { mutableStateOf(false) }
+    var isLocalLocked by remember { mutableStateOf(false) }
 
-    LaunchedEffect(transactionToEdit) {
+    LaunchedEffect(transactionToEdit, assets) {
+        if (selectedAsset == null && assets.isNotEmpty()) {
+            selectedAsset = assets.first()
+        }
+
         transactionToEdit?.let { transaction ->
-            amount = transaction.amount.toString().replace(".0", "").replace(".00", "")
+            amount = transaction.amount.toRupiah()
             note = transaction.title
             selectedType = transaction.type
             selectedDateMillis = transaction.date
+
+            val foundAsset = assets.find { it.id == transaction.fromAssetId }
+            if (foundAsset != null) selectedAsset = foundAsset
         }
     }
 
     LaunchedEffect(selectedType) {
         onTypeChanged(selectedType == TransactionType.INCOME)
+    }
+
+    LaunchedEffect(isLoading) {
+        if (!isLoading) {
+            isLocalLocked = false
+        }
     }
 
     if (showDatePicker) {
@@ -185,6 +215,13 @@ fun AddTransactionContent(
         )
     }
 
+    val numberFormat = remember {
+        val localeID = Locale("id", "ID")
+        val formatter = NumberFormat.getNumberInstance(localeID)
+        formatter.maximumFractionDigits = 0
+        formatter
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -211,17 +248,28 @@ fun AddTransactionContent(
                     onClick = { selectedType = TransactionType.EXPENSE },
                     label = { Text("Pengeluaran") },
                     modifier = Modifier.weight(1f).padding(end = 8.dp),
-                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color.Red.copy(alpha = 0.2f))
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFFCDD2),
+                        selectedLabelColor = Color(0xFFD32F2F)
+                    )
                 )
                 FilterChip(
                     selected = selectedType == TransactionType.INCOME,
                     onClick = { selectedType = TransactionType.INCOME },
                     label = { Text("Pemasukan") },
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
-                    colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color.Green.copy(alpha = 0.2f))
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFC8E6C9),
+                        selectedLabelColor = Color(0xFF388E3C)
+                    )
                 )
             }
 
+            Text(
+                "Kategori",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
             OutlinedCard(
                 onClick = { showCategorySheet = true },
                 colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent),
@@ -232,7 +280,7 @@ fun AddTransactionContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val color = selectedCategory?.color ?: Color.Gray.toArgb()
-                    val iconName = selectedCategory?.icon ?: "category"
+                    val iconName = selectedCategory?.icon ?: "Kategori"
                     val name = selectedCategory?.name ?: "Pilih Kategori"
 
                     Box(
@@ -250,16 +298,95 @@ fun AddTransactionContent(
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
-
                     Text(
                         text = name,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
-
                     Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
                 }
             }
+
+            Text("Dompet / Akun",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            ExposedDropdownMenuBox(
+                expanded = assetDropdownExpanded,
+                onExpandedChange = { assetDropdownExpanded = !assetDropdownExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedAsset?.name ?: "Pilih Dompet",
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier
+                        .menuAnchor(MenuAnchorType.PrimaryEditable, true).
+                        fillMaxWidth(),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = assetDropdownExpanded) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = assetDropdownExpanded,
+                    onDismissRequest = { assetDropdownExpanded = false }
+                ) {
+                    if (assets.isEmpty()) {
+                        DropdownMenuItem(
+                            text = { Text("Belum ada dompet") },
+                            onClick = { assetDropdownExpanded = false }
+                        )
+                    } else {
+                        assets.forEach { asset ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(asset.name, style = MaterialTheme.typography.bodyLarge)
+                                        Text("Saldo: Rp${asset.balance.toRupiah()}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    }
+                                },
+                                onClick = {
+                                    selectedAsset = asset
+                                    assetDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { input ->
+                    val cleanString = input.filter { it.isDigit() }
+
+                    if (cleanString.isNotEmpty()) {
+                        try {
+                            val parsed = cleanString.toLong()
+                            amount = numberFormat.format(parsed)
+                        } catch (e: Exception) {
+                            amount = cleanString
+                        }
+                    } else {
+                        amount = ""
+                    }
+                },
+                prefix = { Text("Rp ")},
+                label = { Text("Jumlah") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                textStyle = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
+            )
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Catatan / Judul") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             OutlinedTextField(
                 value = selectedDateMillis.toReadableDate(),
@@ -281,38 +408,29 @@ fun AddTransactionContent(
                 )
             )
 
-            OutlinedTextField(
-                value = amount,
-                onValueChange = { if (it.all { char -> char.isDigit() }) amount = it },
-                label = { Text("Jumlah (Rp)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Catatan / Judul") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
-                    val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                    onSaveClick(
-                        amountDouble,
-                        note,
-                        selectedType,
-                        selectedDateMillis,
-                        selectedCategory?.id ?: 1
-                    )
+                    val cleanAmount = amount.replace(".", "").replace(",", "").toDoubleOrNull() ?: 0.0
+
+                    if (selectedAsset != null && selectedCategory != null && cleanAmount > 0) {
+                        isLocalLocked = true
+
+                        onSaveClick(
+                            cleanAmount,
+                            note,
+                            selectedType,
+                            selectedDateMillis,
+                            selectedCategory.id,
+                            selectedAsset!!.id
+                        )
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = amount.isNotEmpty() && !isLoading
+                enabled = amount.isNotEmpty() && selectedAsset != null && selectedCategory != null && !isLoading && !isLocalLocked
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
@@ -330,10 +448,11 @@ fun PreviewAddTransactionContent() {
     MaterialTheme {
         AddTransactionContent(
             transactionToEdit = null,
+            assets = emptyList(),
             categories = emptyList(),
             selectedCategory = null,
             onBackClick = {},
-            onSaveClick = { _, _, _, _, _ -> },
+            onSaveClick = { _, _, _, _, _, _ -> },
             onTypeChanged = {},
             onCategorySelected = {},
             isLoading = false

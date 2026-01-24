@@ -30,6 +30,14 @@ class AddTransactionUseCase @Inject constructor(
                 else -> {}
             }
 
+            val newBalance = when (transaction.type) {
+                TransactionType.INCOME -> asset.balance + transaction.amount
+                TransactionType.EXPENSE -> asset.balance - transaction.amount
+                TransactionType.TRANSFER_OUT -> asset.balance - transaction.amount
+                TransactionType.TRANSFER_IN -> asset.balance + transaction.amount
+            }
+
+            assetRepository.updateAsset(asset.copy(balance = newBalance))
             transactionRepository.insertTransaction(transaction)
 
             return Resource.Success(Unit)

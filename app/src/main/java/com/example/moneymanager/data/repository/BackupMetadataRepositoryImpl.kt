@@ -21,10 +21,6 @@ class BackupMetadataRepositoryImpl @Inject constructor(
     override suspend fun deleteBackup(backup: BackupMetadata) =
         dao.deleteBackup(backup.toEntity())
 
-    // ------------------
-    // MAPPERS
-    // ------------------
-
     private fun BackupMetadataEntity.toDomain() = BackupMetadata(
         id = backupId,
         name = backupName,

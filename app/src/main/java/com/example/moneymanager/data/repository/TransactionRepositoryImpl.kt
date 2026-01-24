@@ -29,17 +29,7 @@ class TransactionRepositoryImpl @Inject constructor(
         transactionDao.getTransactionById(id)?.toDomainSimple()
 
     override suspend fun insertTransaction(transaction: Transaction): Long {
-        return db.withTransaction {
-            val id = transactionDao.insertTransaction(transaction.toEntity())
-
-            val amountToAdjust = when (transaction.type) {
-                TransactionType.INCOME -> transaction.amount
-                TransactionType.EXPENSE -> -transaction.amount
-                else -> 0.0
-            }
-            assetDao.updateAssetBalance(transaction.fromAssetId, amountToAdjust)
-            id
-        }
+        return transactionDao.insertTransaction(transaction.toEntity())
     }
 
     override suspend fun updateTransaction(transaction: Transaction) =

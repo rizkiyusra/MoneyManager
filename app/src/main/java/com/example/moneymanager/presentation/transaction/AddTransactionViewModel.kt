@@ -4,11 +4,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneymanager.common.state.Resource
+import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Category
 import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.domain.repository.TransactionRepository
-import com.example.moneymanager.domain.usecase.asset.ReconcileAssetBalanceUseCase
+import com.example.moneymanager.domain.usecase.asset.GetAssetsUseCase
 import com.example.moneymanager.domain.usecase.category.GetCategoriesUseCase
 import com.example.moneymanager.domain.usecase.transaction.AddTransactionUseCase
 import com.example.moneymanager.domain.usecase.transaction.EditTransactionUseCase
@@ -23,8 +24,8 @@ import javax.inject.Inject
 class AddTransactionViewModel @Inject constructor(
     private val addTransactionUseCase: AddTransactionUseCase,
     private val editTransactionUseCase: EditTransactionUseCase,
-    private val reconcileAssetBalanceUseCase: ReconcileAssetBalanceUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val getAssetsUseCase: GetAssetsUseCase,
     private val repository: TransactionRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -34,18 +35,32 @@ class AddTransactionViewModel @Inject constructor(
 
     private val _transactionToEdit = MutableStateFlow<Transaction?>(null)
     val transactionToEdit: StateFlow<Transaction?> = _transactionToEdit.asStateFlow()
-    val currentTransactionId: Int = savedStateHandle.get<Int>("transactionId") ?: -1
+    val currentTransactionId: Int = savedStateHandle.get<Int>("transactionId")?.takeIf { it != -1 } ?: 0
 
-    private val _categories = MutableStateFlow<List<Category>?>(null)
+    private val _categories = MutableStateFlow<List<Category>?>(emptyList())
     val categories: StateFlow<List<Category>?> = _categories.asStateFlow()
+
     private val _selectedCategory = MutableStateFlow<Category?>(null)
     val selectedCategory: StateFlow<Category?> = _selectedCategory.asStateFlow()
 
+    private val _assets = MutableStateFlow<List<Asset>?>(emptyList())
+    val assets: StateFlow<List<Asset>?> = _assets.asStateFlow()
+
     init {
-        if (currentTransactionId != -1) {
+        loadAssets()
+
+        if (currentTransactionId != 0) {
             loadTransaction(currentTransactionId)
         } else {
             loadCategories(isIncomeCategory = false)
+        }
+    }
+
+    private fun loadAssets() {
+        viewModelScope.launch {
+            getAssetsUseCase().collect { list ->
+                _assets.value = list
+            }
         }
     }
 
@@ -92,19 +107,22 @@ class AddTransactionViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _saveState.value = Resource.Loading()
+            val currentCategory = _categories.value?.find { it.id == categoryId }
+            val currentAsset = _assets.value?.find { it.id == fromAssetId }
+
             val transaction = Transaction(
-                id = if (currentTransactionId != -1) currentTransactionId else 0,
+                id = currentTransactionId,
                 amount = amount,
                 note = note,
                 type = type,
                 date = date,
-                categoryName = "",
-                categoryIcon = "",
-                categoryColor = 0,
-                fromAssetName = "",
-                categoryId = categoryId,
+                categoryName = currentCategory?.name ?: "",
+                categoryIcon = currentCategory?.icon ?: "",
+                categoryColor = currentCategory?.color ?: 0,
                 fromAssetId = fromAssetId,
-                title = note.ifEmpty { "Transaksi" },
+                fromAssetName = currentAsset?.name ?: "",
+                categoryId = categoryId,
+                title = note.ifEmpty { currentCategory?.name ?: "Transaksi" },
                 currency = "IDR",
                 convertedAmountIDR = amount,
                 exchangeRate = 1.0,
@@ -113,18 +131,10 @@ class AddTransactionViewModel @Inject constructor(
                 createdDate = System.currentTimeMillis()
             )
 
-            val result = if (currentTransactionId != -1) {
+            val result = if (currentTransactionId != 0) {
                 editTransactionUseCase(transaction)
             } else {
                 addTransactionUseCase(transaction)
-            }
-
-            if (result is Resource.Success) {
-                try {
-                    reconcileAssetBalanceUseCase(fromAssetId)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
             }
 
             _saveState.value = result
