@@ -19,4 +19,10 @@ interface TransferPairDao {
 
     @Delete
     suspend fun deletePair(pair: TransferPairEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertLink(link: TransferLinkEntity)
+
+    @Query("SELECT * FROM transfer_links WHERE transferOutId = :txnId OR transferInId = :txnId LIMIT 1")
+    suspend fun getLinkByTransactionId(txnId: Int): TransferLinkEntity
 }

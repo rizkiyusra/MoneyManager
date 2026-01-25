@@ -12,6 +12,7 @@ import com.example.moneymanager.domain.repository.TransactionRepository
 import com.example.moneymanager.domain.usecase.asset.GetAssetsUseCase
 import com.example.moneymanager.domain.usecase.category.GetCategoriesUseCase
 import com.example.moneymanager.domain.usecase.transaction.AddTransactionUseCase
+import com.example.moneymanager.domain.usecase.transaction.AddTransferUseCase
 import com.example.moneymanager.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.moneymanager.domain.usecase.transaction.EditTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ class AddEditTransactionViewModel @Inject constructor(
     private val editTransactionUseCase: EditTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val addTransferUseCase: AddTransferUseCase,
     private val getAssetsUseCase: GetAssetsUseCase,
     private val repository: TransactionRepository,
     savedStateHandle: SavedStateHandle
@@ -106,40 +108,60 @@ class AddEditTransactionViewModel @Inject constructor(
         date: Long,
         categoryId: Int,
         fromAssetId: Int,
+        toAssetId: Int? = null
     ) {
         viewModelScope.launch {
             _saveState.value = Resource.Loading()
-            val currentCategory = _categories.value?.find { it.id == categoryId }
-            val currentAsset = _assets.value?.find { it.id == fromAssetId }
 
-            val transaction = Transaction(
-                id = currentTransactionId,
-                amount = amount,
-                note = note,
-                type = type,
-                date = date,
-                categoryName = currentCategory?.name ?: "",
-                categoryIcon = currentCategory?.icon ?: "",
-                categoryColor = currentCategory?.color ?: 0,
-                fromAssetId = fromAssetId,
-                fromAssetName = currentAsset?.name ?: "",
-                categoryId = categoryId,
-                title = note.ifEmpty { currentCategory?.name ?: "Transaksi" },
-                currency = "IDR",
-                convertedAmountIDR = amount,
-                exchangeRate = 1.0,
-                location = null,
-                receiptImagePath = null,
-                createdDate = System.currentTimeMillis()
-            )
+            if (type == TransactionType.TRANSFER_OUT) {
 
-            val result = if (currentTransactionId != 0) {
-                editTransactionUseCase(transaction)
+                if (toAssetId == null) {
+                    _saveState.value = Resource.Error("Dompet Tujuan harus dipilih!")
+                    return@launch
+                }
+
+                val result = addTransferUseCase(
+                    amount = amount,
+                    note = note,
+                    date = date,
+                    fromAssetId = fromAssetId,
+                    toAssetId = toAssetId
+                )
+                _saveState.value = result
+
             } else {
-                addTransactionUseCase(transaction)
-            }
+                val currentCategory = _categories.value?.find { it.id == categoryId }
+                val currentAsset = _assets.value?.find { it.id == fromAssetId }
 
-            _saveState.value = result
+                val transaction = Transaction(
+                    id = currentTransactionId,
+                    amount = amount,
+                    note = note,
+                    type = type,
+                    date = date,
+                    categoryName = currentCategory?.name ?: "",
+                    categoryIcon = currentCategory?.icon ?: "",
+                    categoryColor = currentCategory?.color ?: 0,
+                    fromAssetId = fromAssetId,
+                    fromAssetName = currentAsset?.name ?: "",
+                    categoryId = categoryId,
+                    title = note.ifEmpty { currentCategory?.name ?: "Transaksi" },
+                    currency = "IDR",
+                    convertedAmountIDR = amount,
+                    exchangeRate = 1.0,
+                    location = null,
+                    receiptImagePath = null,
+                    createdDate = System.currentTimeMillis()
+                )
+
+                val result = if (currentTransactionId != 0) {
+                    editTransactionUseCase(transaction)
+                } else {
+                    addTransactionUseCase(transaction)
+                }
+
+                _saveState.value = result
+            }
         }
     }
 

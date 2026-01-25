@@ -24,7 +24,7 @@ import com.example.moneymanager.navigation.Screen
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     object Home : BottomNavItem(Screen.Dashboard.route, "Home", Icons.Default.Home)
-    object Wallet : BottomNavItem(Screen.Assets.route, "Wallet", Icons.Default.AccountBalanceWallet)
+    object Wallet : BottomNavItem(Screen.Assets.route, "Aset", Icons.Default.AccountBalanceWallet)
     object History : BottomNavItem("history", "History", Icons.Default.History)
     object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }

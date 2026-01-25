@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "f7f4e24ac61889c4298a73c57d7294c9",
+    "identityHash": "19debe5bc00f4a0a8b4beaebebc06c84",
     "entities": [
       {
         "tableName": "assets",
@@ -592,6 +592,80 @@
         ]
       },
       {
+        "tableName": "transfer_links",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`linkId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `transferOutId` INTEGER NOT NULL, `transferInId` INTEGER NOT NULL, FOREIGN KEY(`transferOutId`) REFERENCES `transactions`(`transactionId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`transferInId`) REFERENCES `transactions`(`transactionId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "linkId",
+            "columnName": "linkId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transferOutId",
+            "columnName": "transferOutId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transferInId",
+            "columnName": "transferInId",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "linkId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transfer_links_transferOutId",
+            "unique": false,
+            "columnNames": [
+              "transferOutId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transfer_links_transferOutId` ON `${TABLE_NAME}` (`transferOutId`)"
+          },
+          {
+            "name": "index_transfer_links_transferInId",
+            "unique": false,
+            "columnNames": [
+              "transferInId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transfer_links_transferInId` ON `${TABLE_NAME}` (`transferInId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "transactions",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "transferOutId"
+            ],
+            "referencedColumns": [
+              "transactionId"
+            ]
+          },
+          {
+            "table": "transactions",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "transferInId"
+            ],
+            "referencedColumns": [
+              "transactionId"
+            ]
+          }
+        ]
+      },
+      {
         "tableName": "backup_metadata",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`backupId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `backupName` TEXT NOT NULL, `backupPath` TEXT NOT NULL, `backupType` TEXT NOT NULL, `backupSize` INTEGER NOT NULL, `totalAssets` INTEGER NOT NULL, `totalTransactions` INTEGER NOT NULL, `backupDate` INTEGER NOT NULL, `isAutoBackup` INTEGER NOT NULL)",
         "fields": [
@@ -660,7 +734,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f7f4e24ac61889c4298a73c57d7294c9')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '19debe5bc00f4a0a8b4beaebebc06c84')"
     ]
   }
 }

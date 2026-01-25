@@ -48,14 +48,13 @@ fun AppNavigation(
             AssetListScreen(navController = navController)
         }
 
-        composable(Screen.AddAsset.route) {
-            AddEditAssetScreen(navController = navController)
-        }
-
         composable(
-            route = "add_asset/{assetId}",
+            route = Screen.AddAsset.route,
             arguments = listOf(
-                navArgument("assetId") { type = NavType.IntType }
+                navArgument("assetId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
             )
         ) {
             AddEditAssetScreen(navController = navController)

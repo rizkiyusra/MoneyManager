@@ -14,6 +14,7 @@ import com.example.moneymanager.data.local.price.PriceHistoryDao
 import com.example.moneymanager.data.local.price.PriceHistoryEntity
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionEntity
+import com.example.moneymanager.data.local.transfer.TransferLinkEntity
 import com.example.moneymanager.data.local.transfer.TransferPairDao
 import com.example.moneymanager.data.local.transfer.TransferPairEntity
 
@@ -25,6 +26,7 @@ import com.example.moneymanager.data.local.transfer.TransferPairEntity
         BudgetEntity::class,
         PriceHistoryEntity::class,
         TransferPairEntity::class,
+        TransferLinkEntity::class,
         BackupMetadataEntity::class
     ],
     version = 2,

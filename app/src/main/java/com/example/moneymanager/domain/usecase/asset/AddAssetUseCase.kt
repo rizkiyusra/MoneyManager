@@ -12,16 +12,17 @@ class AddAssetUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository
 ) {
     suspend operator fun invoke(asset: Asset, initialBalance: Double) {
-        val newAssetId = assetRepository.insertAsset(asset)
+        val assetWithBalance = asset.copy(balance = initialBalance)
+        val newAssetId = assetRepository.insertAsset(assetWithBalance)
 
         if (initialBalance > 0) {
             val transaction = Transaction(
                 id = 0,
                 amount = initialBalance,
-                note = "Initial Balance",
+                note = "Saldo Awal",
                 type = TransactionType.INCOME,
                 date = System.currentTimeMillis(),
-                categoryId = 1,
+                categoryId = null,
                 fromAssetId = newAssetId.toInt(),
                 title = "Saldo Awal",
                 categoryName = "",

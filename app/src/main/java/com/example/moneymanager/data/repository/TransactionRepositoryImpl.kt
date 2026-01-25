@@ -4,9 +4,13 @@ import android.graphics.Color
 import androidx.room.withTransaction
 import com.example.moneymanager.data.local.MoneyManagerDatabase
 import com.example.moneymanager.data.local.asset.AssetDao
+import com.example.moneymanager.data.local.asset.AssetEntity
 import com.example.moneymanager.data.local.relation.TransactionWithDetails
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionEntity
+import com.example.moneymanager.data.local.transfer.TransferLinkEntity
+import com.example.moneymanager.data.local.transfer.TransferPairDao
+import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.domain.repository.TransactionRepository
@@ -17,7 +21,8 @@ import javax.inject.Inject
 class TransactionRepositoryImpl @Inject constructor(
     private val db: MoneyManagerDatabase,
     private val transactionDao: TransactionDao,
-    private val assetDao: AssetDao
+    private val assetDao: AssetDao,
+    private val transferPairDao: TransferPairDao
 ) : TransactionRepository {
 
     override fun getTransactions(): Flow<List<Transaction>> =
@@ -68,6 +73,24 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun deleteTransactionsByAssetId(assetId: Int) {
          transactionDao.deleteTransactionsByAssetId(assetId)
+    }
+
+    override suspend fun insertTransfer(
+        sourceTransaction: Transaction,
+        destinationTransaction: Transaction,
+        sourceAsset: Asset,
+        destinationAsset: Asset
+    ) {
+        db.withTransaction {
+            val outId = transactionDao.insertTransaction(sourceTransaction.toEntity()).toInt()
+            val inId = transactionDao.insertTransaction(destinationTransaction.toEntity()).toInt()
+
+            assetDao.updateAsset(sourceAsset.toEntity())
+            assetDao.updateAsset(destinationAsset.toEntity())
+
+            val link = TransferLinkEntity(transferOutId = outId, transferInId = inId)
+            transferPairDao.insertLink(link)
+        }
     }
 
     private fun TransactionWithDetails.toDomain(): Transaction {
@@ -132,5 +155,22 @@ class TransactionRepositoryImpl @Inject constructor(
         receiptImagePath = receiptImagePath,
         transactionDate = date,
         createdDate = createdDate
+    )
+
+    private fun Asset.toEntity() = AssetEntity(
+        assetId = id,
+        assetName = name,
+        assetType = type,
+        currentBalance = balance,
+        balanceUnit = "IDR",
+        currencySymbol = "Rp",
+        accountNumber = null,
+        bankName = null,
+        lastPriceUpdate = null,
+        priceSource = null,
+        isActive = true,
+        sortOrder = 0,
+        createdDate = System.currentTimeMillis(),
+        lastModified = System.currentTimeMillis()
     )
 }

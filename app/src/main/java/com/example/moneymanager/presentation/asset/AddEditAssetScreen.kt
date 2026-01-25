@@ -13,6 +13,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.moneymanager.common.extension.cleanToDouble
+import com.example.moneymanager.common.extension.formatToThousandSeparator
 import com.example.moneymanager.common.state.Resource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,8 +65,7 @@ fun AddEditAssetScreen(
              if (asset != null) {
                  name = asset.name
                  selectedType = asset.type
-                 initialBalance = asset.balance.toInt().toString()
-             }
+                 initialBalance = asset.balance.toLong().toString().formatToThousandSeparator()             }
          }
     }
 
@@ -108,8 +109,11 @@ fun AddEditAssetScreen(
 
             OutlinedTextField(
                 value = initialBalance,
-                onValueChange = { if (it.all { char -> char.isDigit() }) initialBalance = it },
-                label = { Text("Saldo Awal (Rp)") },
+                onValueChange = { input ->
+                    initialBalance = input.formatToThousandSeparator()
+                },
+                prefix = { Text("Rp ") },
+                label = { Text("Saldo Awal") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isEditMode,
@@ -127,7 +131,7 @@ fun AddEditAssetScreen(
                     if (isEditMode) {
                         viewModel.updateAsset(assetId, name, selectedType)
                     } else {
-                        val balance = initialBalance.toDoubleOrNull() ?: 0.0
+                        val balance = initialBalance.cleanToDouble()
                         viewModel.saveAsset(name, selectedType, balance)
                     }
                 },
