@@ -9,6 +9,10 @@ import javax.inject.Inject
 class GetCategoriesUseCase @Inject constructor(
     private val repository: CategoryRepository
 ) {
+    operator fun invoke(): Flow<List<Category>> {
+        return repository.getCategories()
+    }
+
     operator fun invoke(isIncomeCategory: Boolean): Flow<List<Category>> {
         return repository.getCategories()
             .map { list ->

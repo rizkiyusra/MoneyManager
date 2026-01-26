@@ -9,7 +9,7 @@ fun Double.toRupiah(): String {
         val numberFormat = NumberFormat.getCurrencyInstance(localeID)
         numberFormat.maximumFractionDigits = 0
         numberFormat.format(this)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         "Rp $this"
     }
 }
@@ -29,7 +29,7 @@ fun String.formatToThousandSeparator(): String {
         val formatter = NumberFormat.getNumberInstance(localeID)
         formatter.maximumFractionDigits = 0
         formatter.format(parsed)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         cleanString
     }
 }

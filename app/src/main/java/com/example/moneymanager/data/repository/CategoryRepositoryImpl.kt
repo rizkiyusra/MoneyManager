@@ -13,7 +13,13 @@ class CategoryRepositoryImpl @Inject constructor(
 ) : CategoryRepository {
 
     override fun getCategories(): Flow<List<Category>> =
-        dao.getAllCategories().map { list -> list.map { it.toDomain() } }
+        dao.getAllActiveCategories().map { list -> list.map { it.toDomain() } }
+
+    override fun getAllCategoriesIncludeDeleted(): Flow<List<Category>> {
+        return dao.getAllCategoriesRaw().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
 
     override suspend fun getCategoryById(id: Int): Category? =
         dao.getCategoryById(id)?.toDomain()
@@ -24,8 +30,11 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun updateCategory(category: Category) =
         dao.updateCategory(category.toEntity())
 
-    override suspend fun deleteCategory(category: Category) =
-        dao.deleteCategory(category.toEntity())
+    override suspend fun deleteCategory(id: Int) =
+        dao.softDeleteCategory(id)
+
+    override suspend fun incrementUsage(id: Int) =
+        dao.incrementUsageCount(id)
 
     private fun CategoryEntity.toDomain() = Category(
         id = categoryId,

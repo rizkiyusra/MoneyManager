@@ -33,6 +33,7 @@ import com.example.moneymanager.data.local.category.CategoryEntity
         Index("transactionDate"),
     ]
 )
+
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true) val transactionId: Int = 0,
     val fromAssetId: Int,
@@ -50,4 +51,3 @@ data class TransactionEntity(
     val transactionDate: Long,
     val createdDate: Long = System.currentTimeMillis()
 )
-

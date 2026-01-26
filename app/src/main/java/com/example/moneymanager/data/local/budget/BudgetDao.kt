@@ -1,7 +1,6 @@
 package com.example.moneymanager.data.local.budget
 
 import androidx.room.*
-import com.example.moneymanager.data.local.asset.AssetEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

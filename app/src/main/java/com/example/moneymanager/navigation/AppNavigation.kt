@@ -19,7 +19,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.moneymanager.presentation.asset.AddEditAssetScreen
 import com.example.moneymanager.presentation.asset.AssetListScreen
+import com.example.moneymanager.presentation.category.AddEditCategoryScreen
+import com.example.moneymanager.presentation.category.CategoryListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
+import com.example.moneymanager.presentation.profile.ProfileScreen
 import com.example.moneymanager.presentation.setting.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
 
@@ -38,9 +41,6 @@ fun AppNavigation(
                 onNavigateToAddTransaction = { transactionId ->
                     navController.navigate(Screen.AddTransaction.createRoute(transactionId))
                 },
-                onNavigateToSettings = {
-                    navController.navigate(Screen.Settings.route)
-                }
             )
         }
 
@@ -76,12 +76,28 @@ fun AppNavigation(
             AddEditTransactionScreen(navController = navController)
         }
 
+        composable(Screen.Categories.route) {
+            CategoryListScreen(navController = navController)
+        }
+
+        composable(
+            route = Screen.AddCategory.route,
+            arguments = listOf(
+                navArgument("categoryId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) {
+            AddEditCategoryScreen(navController = navController)
+        }
+
         composable("history") {
             PlaceholderScreen(title = "History")
         }
 
-        composable("profile") {
-            PlaceholderScreen(title = "Profile")
+        composable(Screen.Profiles.route) {
+            ProfileScreen(navController = navController)
         }
 
         composable(Screen.Settings.route) {

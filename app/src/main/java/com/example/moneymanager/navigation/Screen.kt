@@ -4,9 +4,21 @@ sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
     object Assets : Screen("assets")
     object Transactions : Screen("transactions")
+    object Categories : Screen("categories")
+    object Profiles: Screen("profile")
     object Settings : Screen("settings")
     object Budget : Screen("budget")
     object Reports : Screen("reports")
+
+    object AddCategory : Screen("add_category?categoryId={categoryId}") {
+        fun createRoute(categoryId: Int? = null): String {
+            return if (categoryId != null) {
+                "add_category?categoryId=$categoryId"
+            } else {
+                "add_category"
+            }
+        }
+    }
 
     object AddTransaction : Screen("add_transaction?transactionId={transactionId}") {
         fun createRoute(transactionId: Int? = null): String {
