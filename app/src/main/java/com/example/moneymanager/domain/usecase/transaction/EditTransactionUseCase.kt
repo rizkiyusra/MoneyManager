@@ -5,11 +5,13 @@ import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.domain.repository.AssetRepository
 import com.example.moneymanager.domain.repository.TransactionRepository
+import com.example.moneymanager.domain.usecase.asset.ReconcileAssetBalanceUseCase
 import javax.inject.Inject
 
 class EditTransactionUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val assetRepository: AssetRepository
+    private val assetRepository: AssetRepository,
+    private val reconcileAssetBalanceUseCase: ReconcileAssetBalanceUseCase
 ) {
     suspend operator fun invoke(newTransaction: Transaction): Resource<Unit> {
         return try {
@@ -23,29 +25,37 @@ class EditTransactionUseCase @Inject constructor(
             val oldTransaction = transactionRepository.getTransactionById(newTransaction.id)
                 ?: return Resource.Error("Transaksi lama tidak ditemukan!")
 
-            val asset = assetRepository.getAssetById(newTransaction.fromAssetId)
-                ?: return Resource.Error("Aset tidak ditemukan!")
+            if (newTransaction.type == TransactionType.EXPENSE && oldTransaction.fromAssetId != newTransaction.fromAssetId) {
+                val targetAsset = assetRepository.getAssetById(newTransaction.fromAssetId)
 
-            val balanceAfterRollback = when (oldTransaction.type) {
-                TransactionType.INCOME -> asset.balance - oldTransaction.amount
-                TransactionType.EXPENSE -> asset.balance + oldTransaction.amount
-                TransactionType.TRANSFER_OUT -> asset.balance + oldTransaction.amount
-                TransactionType.TRANSFER_IN -> asset.balance - oldTransaction.amount
+                if ((targetAsset?.balance ?: 0.0) < newTransaction.amount) {
+                    return Resource.Error("Saldo '${targetAsset?.name}' tidak cukup untuk menampung transaksi ini!")
+                }
             }
 
-            val finalBalance = when (newTransaction.type) {
-                TransactionType.INCOME -> balanceAfterRollback + newTransaction.amount
-                TransactionType.EXPENSE -> balanceAfterRollback - newTransaction.amount
-                TransactionType.TRANSFER_OUT -> balanceAfterRollback - newTransaction.amount
-                TransactionType.TRANSFER_IN -> balanceAfterRollback + newTransaction.amount
+            if (newTransaction.type == TransactionType.EXPENSE && oldTransaction.fromAssetId == newTransaction.fromAssetId) {
+                val currentAsset = assetRepository.getAssetById(newTransaction.fromAssetId)
+                val realBalance = (currentAsset?.balance ?: 0.0) + oldTransaction.amount
+
+                if (realBalance < newTransaction.amount) {
+                    return Resource.Error("Saldo tidak cukup untuk nominal baru!")
+                }
             }
 
-            if (finalBalance < 0 && newTransaction.type == TransactionType.EXPENSE) {
-                return Resource.Error("Saldo tidak cukup setelah diedit!")
-            }
-
-            assetRepository.updateAsset(asset.copy(balance = finalBalance))
             transactionRepository.updateTransaction(newTransaction)
+            reconcileAssetBalanceUseCase(newTransaction.fromAssetId)
+
+            if (oldTransaction.fromAssetId != newTransaction.fromAssetId) {
+                reconcileAssetBalanceUseCase(oldTransaction.fromAssetId)
+            }
+
+            if (newTransaction.toAssetId != null) {
+                reconcileAssetBalanceUseCase(newTransaction.toAssetId)
+
+                if (oldTransaction.toAssetId != newTransaction.toAssetId && oldTransaction.toAssetId != null) {
+                    reconcileAssetBalanceUseCase(oldTransaction.toAssetId)
+                }
+            }
 
             Resource.Success(Unit)
 

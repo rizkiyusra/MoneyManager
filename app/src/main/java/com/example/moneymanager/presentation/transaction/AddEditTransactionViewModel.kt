@@ -84,14 +84,13 @@ class AddEditTransactionViewModel @Inject constructor(
     }
 
     fun loadCategories(isIncomeCategory: Boolean, onLoaded: ((List<Category>) -> Unit)? = null) {
+        if (onLoaded == null) {
+            _selectedCategory.value = null
+        }
+
         viewModelScope.launch {
             getCategoriesUseCase(isIncomeCategory).collect { list ->
                 _categories.value = list
-
-                if (_selectedCategory.value == null && list.isNotEmpty()) {
-                    _selectedCategory.value = list.first()
-                }
-
                 onLoaded?.invoke(list)
             }
         }
@@ -130,6 +129,11 @@ class AddEditTransactionViewModel @Inject constructor(
                 _saveState.value = result
 
             } else {
+                if (categoryId == 0) {
+                    _saveState.value = Resource.Error("Silakan pilih kategori!")
+                    return@launch
+                }
+
                 val currentCategory = _categories.value?.find { it.id == categoryId }
                 val currentAsset = _assets.value?.find { it.id == fromAssetId }
 

@@ -7,11 +7,13 @@ import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.domain.repository.AssetRepository
 import com.example.moneymanager.domain.repository.TransactionRepository
+import com.example.moneymanager.domain.usecase.asset.ReconcileAssetBalanceUseCase
 import javax.inject.Inject
 
 class AddTransferUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val assetRepository: AssetRepository
+    private val assetRepository: AssetRepository,
+    private val reconcileAssetBalanceUseCase: ReconcileAssetBalanceUseCase
 ) {
 
     suspend operator fun invoke(
@@ -39,8 +41,6 @@ class AddTransferUseCase @Inject constructor(
                 return Resource.Error("Saldo '${sourceAsset.name}' tidak mencukupi (Sisa: Rp${sourceAsset.balance.toRupiah()})")
             }
 
-            val updatedSourceAsset = sourceAsset.copy(balance = sourceAsset.balance - amount)
-            val updatedDestAsset = destAsset.copy(balance = destAsset.balance + amount)
 
             val txOut = Transaction(
                 id = 0,
@@ -85,9 +85,12 @@ class AddTransferUseCase @Inject constructor(
             transactionRepository.insertTransfer(
                 sourceTransaction = txOut,
                 destinationTransaction = txIn,
-                sourceAsset = updatedSourceAsset,
-                destinationAsset = updatedDestAsset
+                sourceAsset = sourceAsset,
+                destinationAsset = destAsset
             )
+
+            reconcileAssetBalanceUseCase(fromAssetId)
+            reconcileAssetBalanceUseCase(toAssetId)
 
             Resource.Success(Unit)
 

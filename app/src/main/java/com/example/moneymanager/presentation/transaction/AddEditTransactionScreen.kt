@@ -175,10 +175,6 @@ fun AddEditTransactionContent(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(transactionToEdit, assets) {
-        if (selectedFromAsset == null && assets.isNotEmpty()) {
-            selectedFromAsset = assets.first()
-        }
-
         transactionToEdit?.let { transaction ->
             amount = transaction.amount.toLong().toString().formatToThousandSeparator()
             note = transaction.title
@@ -350,7 +346,7 @@ fun AddEditTransactionContent(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedFromAsset?.name ?: "Pilih Dompet",
+                        value = selectedFromAsset?.name ?: "Pilih Aset",
                         onValueChange = {}, readOnly = true,
                         modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
                             .fillMaxWidth(),
@@ -395,7 +391,7 @@ fun AddEditTransactionContent(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedToAsset?.name ?: "Pilih Tujuan",
+                        value = selectedToAsset?.name ?: "Pilih Aset Tujuan",
                         onValueChange = {}, readOnly = true,
                         modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true).fillMaxWidth(),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = toAssetDropdownExpanded) },
@@ -464,7 +460,7 @@ fun AddEditTransactionContent(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedFromAsset?.name ?: "Pilih Dompet",
+                        value = selectedFromAsset?.name ?: "Pilih Aset",
                         onValueChange = {},
                         readOnly = true,
                         modifier = Modifier
