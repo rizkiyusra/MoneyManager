@@ -52,4 +52,10 @@ abstract class RepositoryModule {
     abstract fun bindBackupRepository(
         backupMetadataRepositoryImpl: BackupMetadataRepositoryImpl
     ): BackupMetadataRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindRecurringRepository(
+        recurringRepositoryImpl: RecurringRepositoryImpl
+    ): RecurringRepository
 }

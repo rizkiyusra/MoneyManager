@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,6 +48,14 @@ fun SettingsScreen(navController: NavController) {
                 icon = Icons.Default.Category,
                 onClick = {
                     navController.navigate(Screen.Categories.route)
+                }
+            )
+
+            SettingsItem(
+                title = "Jadwal Otomatis (Recurring)",
+                icon = Icons.Default.Repeat,
+                onClick = {
+                    navController.navigate(Screen.Recurring.route)
                 }
             )
 

@@ -9,6 +9,7 @@ import com.example.moneymanager.data.local.budget.BudgetDao
 import com.example.moneymanager.data.local.callback.DatabaseSeeder
 import com.example.moneymanager.data.local.category.CategoryDao
 import com.example.moneymanager.data.local.price.PriceHistoryDao
+import com.example.moneymanager.data.local.recurring.RecurringTransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transfer.TransferPairDao
 import dagger.Module
@@ -71,5 +72,10 @@ object DatabaseModule {
     @Provides
     fun provideBackupMetadataDao(db: MoneyManagerDatabase): BackupMetadataDao {
         return db.backupMetadataDao()
+    }
+
+    @Provides
+    fun provideRecurringTransactionDao(db: MoneyManagerDatabase): RecurringTransactionDao {
+        return db.recurringTransactionDao()
     }
 }

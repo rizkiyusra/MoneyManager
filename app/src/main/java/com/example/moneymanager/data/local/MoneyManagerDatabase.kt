@@ -12,11 +12,14 @@ import com.example.moneymanager.data.local.category.CategoryDao
 import com.example.moneymanager.data.local.category.CategoryEntity
 import com.example.moneymanager.data.local.price.PriceHistoryDao
 import com.example.moneymanager.data.local.price.PriceHistoryEntity
+import com.example.moneymanager.data.local.recurring.RecurringTransactionDao
+import com.example.moneymanager.data.local.recurring.RecurringTransactionEntity
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionEntity
 import com.example.moneymanager.data.local.transfer.TransferLinkEntity
 import com.example.moneymanager.data.local.transfer.TransferPairDao
 import com.example.moneymanager.data.local.transfer.TransferPairEntity
+
 
 @Database(
     entities = [
@@ -27,7 +30,8 @@ import com.example.moneymanager.data.local.transfer.TransferPairEntity
         PriceHistoryEntity::class,
         TransferPairEntity::class,
         TransferLinkEntity::class,
-        BackupMetadataEntity::class
+        BackupMetadataEntity::class,
+        RecurringTransactionEntity::class,
     ],
     version = 2,
     exportSchema = true
@@ -40,4 +44,5 @@ abstract class MoneyManagerDatabase : RoomDatabase() {
     abstract fun priceHistoryDao(): PriceHistoryDao
     abstract fun transferPairDao(): TransferPairDao
     abstract fun backupMetadataDao(): BackupMetadataDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
 }

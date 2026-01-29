@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.0"
+agp = "8.13.2"
 kotlin = "2.2.10"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -21,6 +21,7 @@ archCoreTesting = "2.2.0"
 googleTruth = "1.4.4"
 ksp = "2.2.10-2.0.2"
 roomKtx = "2.8.4"
+work = "2.9.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -57,6 +58,9 @@ androidx-arch-core-testing = { group = "androidx.arch.core", name = "core-testin
 google-truth = { group = "com.google.truth", name = "truth", version.ref = "googleTruth" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt_navigation" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt_navigation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -66,7 +70,6 @@ hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 
 [bundles]
-# Kumpulan library Compose agar tinggal panggil 1 baris
 compose = [
     "androidx-activity-compose",
     "androidx-lifecycle-runtime-ktx",
@@ -78,20 +81,17 @@ compose = [
     "androidx-compose-material3"
 ]
 
-# Kumpulan library Room
 room = [
     "room-runtime",
     "room-ktx"
 ]
 
-# Kumpulan library Testing (Unit Test)
 testing-unit = [
     "junit",
     "google-truth",
     "coroutines-test"
 ]
 
-# Kumpulan library Testing (Android Test)
 testing-android = [
     "androidx-junit",
     "androidx-espresso-core",
