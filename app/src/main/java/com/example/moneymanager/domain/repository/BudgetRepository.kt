@@ -4,7 +4,7 @@ import com.example.moneymanager.domain.model.Budget
 import kotlinx.coroutines.flow.Flow
 
 interface BudgetRepository {
-    fun getBudgets(): Flow<List<Budget>>
+    fun getBudgets(month: Int, year: Int): Flow<List<Budget>>
     suspend fun getBudgetById(id: Int): Budget?
     suspend fun insertBudget(budget: Budget): Long
     suspend fun updateBudget(budget: Budget)

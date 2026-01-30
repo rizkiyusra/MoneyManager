@@ -9,11 +9,15 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class BudgetRepositoryImpl @Inject constructor(
-    private val dao: BudgetDao
+    private val dao: BudgetDao,
 ) : BudgetRepository {
 
-    override fun getBudgets(): Flow<List<Budget>> =
-        dao.getAllBudgets().map { list -> list.map { it.toDomain() } }
+    override fun getBudgets(month: Int, year: Int): Flow<List<Budget>> {
+        return dao.getAllBudgets().map { list ->
+            list.filter { it.budgetMonth == month && it.budgetYear == year }
+                .map { it.toDomain() }
+        }
+    }
 
     override suspend fun getBudgetById(id: Int): Budget? =
         dao.getBudgetById(id)?.toDomain()
@@ -42,7 +46,6 @@ class BudgetRepositoryImpl @Inject constructor(
         lastUpdated = System.currentTimeMillis()
     )
 
-    // Mapping Domain -> Entity
     private fun Budget.toEntity() = BudgetEntity(
         budgetId = id,
         budgetCategoryId = categoryId,

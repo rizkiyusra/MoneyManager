@@ -30,4 +30,13 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE fromAssetId = :assetId")
     suspend fun deleteTransactionsByAssetId(assetId: Int)
+
+    @Query("""
+        SELECT COALESCE(SUM(transactionAmount), 0.0) 
+        FROM transactions 
+        WHERE categoryId = :categoryId 
+        AND transactionType = 'EXPENSE' 
+        AND transactionDate BETWEEN :startDate AND :endDate
+    """)
+    fun getExpenseByCategoryAndDate(categoryId: Int, startDate: Long, endDate: Long): Flow<Double>
 }

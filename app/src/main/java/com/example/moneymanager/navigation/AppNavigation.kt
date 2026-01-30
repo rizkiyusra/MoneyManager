@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.moneymanager.presentation.asset.AddEditAssetScreen
 import com.example.moneymanager.presentation.asset.AssetListScreen
+import com.example.moneymanager.presentation.budget.BudgetScreen
 import com.example.moneymanager.presentation.category.AddEditCategoryScreen
 import com.example.moneymanager.presentation.category.CategoryListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
@@ -42,6 +43,9 @@ fun AppNavigation(
                 onNavigateToAddTransaction = { transactionId ->
                     navController.navigate(Screen.AddTransaction.createRoute(transactionId))
                 },
+                onNavigateToBudget = {
+                    navController.navigate(Screen.Budget.route)
+                },
             )
         }
 
@@ -59,10 +63,6 @@ fun AppNavigation(
             )
         ) {
             AddEditAssetScreen(navController = navController)
-        }
-
-        composable(Screen.AddTransaction.route) {
-            AddEditTransactionScreen(navController = navController)
         }
 
         composable(
@@ -107,6 +107,10 @@ fun AppNavigation(
 
         composable (Screen.Recurring.route) {
             RecurringScreen(navController = navController)
+        }
+
+        composable(Screen.Budget.route) {
+            BudgetScreen(navController = navController)
         }
     }
 }

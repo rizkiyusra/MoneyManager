@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
     onNavigateToAddTransaction: (Int?) -> Unit,
+    onNavigateToBudget: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -48,6 +50,7 @@ fun DashboardScreen(
         snackbarHostState = snackbarHostState,
         onRetry = ({ viewModel.retryLoading() }),
         onNavigateToAddTransaction = onNavigateToAddTransaction,
+        onNavigateToBudget = onNavigateToBudget,
         onDeleteTransaction = { transaction ->
             viewModel.deleteTransaction(transaction)
             scope.launch {
@@ -71,13 +74,23 @@ private fun DashboardContent(
     snackbarHostState: SnackbarHostState,
     onRetry: () -> Unit,
     onDeleteTransaction: (Transaction) -> Unit,
-    onNavigateToAddTransaction: (Int?) -> Unit
+    onNavigateToAddTransaction: (Int?) -> Unit,
+    onNavigateToBudget: () -> Unit,
 ) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = onNavigateToBudget) {
+                        Icon(
+                            imageVector = Icons.Default.PieChart,
+                            contentDescription = "Budget",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -228,7 +241,7 @@ private fun DashboardPreview() {
                 recentTransactions = emptyList()
             ),
             onDeleteTransaction = {},
-            onNavigateToAddTransaction = {},
+            onNavigateToAddTransaction = {}
         )
     }
 }
