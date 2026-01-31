@@ -24,8 +24,8 @@ import com.example.moneymanager.presentation.category.AddEditCategoryScreen
 import com.example.moneymanager.presentation.category.CategoryListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
 import com.example.moneymanager.presentation.profile.ProfileScreen
-import com.example.moneymanager.presentation.recurring.RecurringScreen
-import com.example.moneymanager.presentation.setting.SettingsScreen
+import com.example.moneymanager.presentation.recurring.RecurringListScreen
+import com.example.moneymanager.presentation.settings.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
 
 @Composable
@@ -47,6 +47,10 @@ fun AppNavigation(
                     navController.navigate(Screen.Budget.route)
                 },
             )
+        }
+
+        composable(Screen.Budget.route) {
+            BudgetScreen(navController = navController)
         }
 
         composable(Screen.Assets.route) {
@@ -106,11 +110,7 @@ fun AppNavigation(
         }
 
         composable (Screen.Recurring.route) {
-            RecurringScreen(navController = navController)
-        }
-
-        composable(Screen.Budget.route) {
-            BudgetScreen(navController = navController)
+            RecurringListScreen(navController = navController)
         }
     }
 }

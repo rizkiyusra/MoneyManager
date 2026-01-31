@@ -1,4 +1,4 @@
-package com.example.moneymanager.presentation.component
+package com.example.moneymanager.presentation.dashboard.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,35 +19,6 @@ import com.example.moneymanager.R
 import com.example.moneymanager.common.extension.toRupiah
 import com.example.moneymanager.presentation.theme.expense
 import com.example.moneymanager.presentation.theme.income
-
-@Composable
-fun TotalBalanceCard(balance: Double) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.total_balance),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = balance.toRupiah(),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
 
 @Composable
 fun IncomeExpenseRow(income: Double, expense: Double) {

@@ -1,6 +1,5 @@
 package com.example.moneymanager.presentation.asset
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -8,73 +7,74 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.moneymanager.common.extension.cleanToDouble
-import com.example.moneymanager.common.extension.formatToThousandSeparator
-import com.example.moneymanager.common.state.Resource
+import com.example.moneymanager.presentation.asset.components.AssetTypeSelector
+import kotlinx.coroutines.flow.collectLatest
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditAssetScreen(
     navController: NavController,
     viewModel: AddEditAssetViewModel = hiltViewModel()
 ) {
-    val saveState by viewModel.saveState.collectAsState()
-    val isLoading = saveState is Resource.Loading
-    val context = LocalContext.current
-
-    var name by remember { mutableStateOf("") }
-    var initialBalance by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("CASH") }
-
-    var isButtonLocked by remember { mutableStateOf(false) }
+    val assetName = viewModel.assetName
+    val assetType = viewModel.assetType
+    val currentBalance = viewModel.currentBalance
     val assetId = navController.currentBackStackEntry?.arguments?.getInt("assetId") ?: -1
-    val assetDetailState by viewModel.assetDetailState.collectAsState()
     val isEditMode = assetId != -1
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(saveState) {
-        when (saveState) {
-            is Resource.Success -> {
-                val message = if (isEditMode) "Wallet Berhasil Diupdate!" else "Wallet Berhasil Dibuat!"
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                viewModel.resetState()
-                isButtonLocked = false
-                navController.popBackStack()
+    LaunchedEffect(key1 = true) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is AddEditAssetViewModel.UiEvent.SaveSuccess -> {
+                    navController.popBackStack()
+                }
+                is AddEditAssetViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
             }
-            is Resource.Error -> {
-                Toast.makeText(context, "Error: ${(saveState as Resource.Error).message}", Toast.LENGTH_LONG).show()
-                viewModel.resetState()
-                isButtonLocked = false
-            }
-            else -> Unit
         }
     }
 
-    LaunchedEffect(key1 = assetId) {
-        if (isEditMode) {
-             viewModel.getAssetById(assetId)
-        }
-    }
-    LaunchedEffect(assetDetailState) {
-         if (assetDetailState is Resource.Success) {
-             val asset = (assetDetailState as Resource.Success).data
-             if (asset != null) {
-                 name = asset.name
-                 selectedType = asset.type
-                 initialBalance = asset.balance.toLong().toString().formatToThousandSeparator()             }
-         }
-    }
+    AddEditAssetContent(
+        isEditMode = isEditMode,
+        name = assetName,
+        onNameChange = viewModel::onNameChange,
+        selectedType = assetType,
+        onTypeChange = viewModel::onTypeChange,
+        initialBalance = currentBalance,
+        onBalanceChange = viewModel::onBalanceChange,
+        snackbarHostState = snackbarHostState,
+        onBackClick = { navController.popBackStack() },
+        onSaveClick = { viewModel.onSaveAsset() }
+    )
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEditAssetContent(
+    isEditMode: Boolean,
+    name: String,
+    onNameChange: (String) -> Unit,
+    selectedType: String,
+    onTypeChange: (String) -> Unit,
+    initialBalance: String,
+    onBalanceChange: (String) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onBackClick: () -> Unit,
+    onSaveClick: () -> Unit
+) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (isEditMode) "Edit Wallet" else "Tambah Wallet Baru") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -90,28 +90,20 @@ fun AddEditAssetScreen(
         ) {
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = onNameChange,
                 label = { Text("Nama Wallet (misal: BCA, Dompet)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            Text("Tipe Wallet", style = MaterialTheme.typography.titleSmall)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("CASH", "BANK", "EWALLET").forEach { type ->
-                    FilterChip(
-                        selected = selectedType == type,
-                        onClick = { selectedType = type },
-                        label = { Text(type) }
-                    )
-                }
-            }
+            AssetTypeSelector(
+                selectedType = selectedType,
+                onTypeSelected = onTypeChange,
+            )
 
             OutlinedTextField(
                 value = initialBalance,
-                onValueChange = { input ->
-                    initialBalance = input.formatToThousandSeparator()
-                },
+                onValueChange = onBalanceChange,
                 prefix = { Text("Rp ") },
                 label = { Text("Saldo Awal") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -126,27 +118,52 @@ fun AddEditAssetScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = {
-                    isButtonLocked = true
-                    if (isEditMode) {
-                        viewModel.updateAsset(assetId, name, selectedType)
-                    } else {
-                        val balance = initialBalance.cleanToDouble()
-                        viewModel.saveAsset(name, selectedType, balance)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                enabled = name.isNotEmpty() && !isLoading && !isButtonLocked
+                onClick = onSaveClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = name.isNotBlank()
             ) {
-                if (isLoading || isButtonLocked) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("Simpan Wallet")
-                }
+                Text(if (isEditMode) "Update Wallet" else "Simpan Wallet")
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddAssetScreenPreview() {
+    MaterialTheme {
+        AddEditAssetContent(
+            isEditMode = false,
+            name = "",
+            onNameChange = {},
+            selectedType = "CASH",
+            onTypeChange = {},
+            initialBalance = "",
+            onBalanceChange = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            onBackClick = {},
+            onSaveClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun EditAssetScreenPreview() {
+    MaterialTheme {
+        AddEditAssetContent(
+            isEditMode = true,
+            name = "BCA",
+            onNameChange = {},
+            selectedType = "BANK",
+            onTypeChange = {},
+            initialBalance = "5.000.000",
+            onBalanceChange = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            onBackClick = {},
+            onSaveClick = {}
+        )
     }
 }

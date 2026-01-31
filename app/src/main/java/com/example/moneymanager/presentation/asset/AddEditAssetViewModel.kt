@@ -1,16 +1,20 @@
 package com.example.moneymanager.presentation.asset
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneymanager.common.state.Resource
+import com.example.moneymanager.common.extension.cleanToDouble
+import com.example.moneymanager.common.extension.formatToThousandSeparator
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.usecase.asset.AddAssetUseCase
 import com.example.moneymanager.domain.usecase.asset.GetAssetByIdUseCase
 import com.example.moneymanager.domain.usecase.asset.UpdateAssetUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,79 +22,104 @@ import javax.inject.Inject
 class AddEditAssetViewModel @Inject constructor(
     private val addAssetUseCase: AddAssetUseCase,
     private val getAssetByIdUseCase: GetAssetByIdUseCase,
-    private val updateAssetUseCase: UpdateAssetUseCase
+    private val updateAssetUseCase: UpdateAssetUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    var assetName by mutableStateOf("")
+        private set
 
-    private val _saveState = MutableStateFlow<Resource<Unit>?>(null)
-    val saveState: StateFlow<Resource<Unit>?> = _saveState.asStateFlow()
-    private val _assetDetailState = MutableStateFlow<Resource<Asset>?>(null)
-    val assetDetailState: StateFlow<Resource<Asset>?> = _assetDetailState.asStateFlow()
+    var assetType by mutableStateOf("CASH")
+        private set
 
-    fun saveAsset(name: String, type: String, initialBalance: Double) {
-        viewModelScope.launch {
-            _saveState.value = Resource.Loading()
-            try {
-                val asset = Asset(
-                    id = 0,
-                    name = name,
-                    type = type,
-                    balance = 0.0,
-                    unit = "IDR",
-                    currencySymbol = "Rp",
-                    isActive = true
-                )
+    var currentBalance by mutableStateOf("")
+        private set
 
-                addAssetUseCase(asset, initialBalance)
+    private var currentAssetId: Int? = null
 
-                _saveState.value = Resource.Success(Unit)
-            } catch (e: Exception) {
-                _saveState.value = Resource.Error(e.message ?: "Gagal menyimpan aset")
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
+    init {
+        savedStateHandle.get<Int>("assetId")?.let { id ->
+            if (id != -1) {
+                loadAsset(id)
             }
         }
     }
 
-    fun updateAsset(id: Int, name: String, type: String) {
+    private fun loadAsset(id: Int) {
         viewModelScope.launch {
-            _saveState.value = Resource.Loading()
-            try {
-                val currentAsset = (_assetDetailState.value as? Resource.Success)?.data
-                val currentBalance = currentAsset?.balance ?: 0.0
-
-                val updatedAsset = Asset(
-                    id = id,
-                    name = name,
-                    type = type,
-                    balance = currentBalance,
-                    unit = "IDR",
-                    currencySymbol = "Rp",
-                    isActive = true
-                )
-
-                updateAssetUseCase(updatedAsset)
-                _saveState.value = Resource.Success(Unit)
-            } catch (e: Exception) {
-                _saveState.value = Resource.Error(e.message ?: "Gagal mengupdate aset")
+            val asset = getAssetByIdUseCase(id)
+            if (asset != null) {
+                currentAssetId = asset.id
+                assetName = asset.name
+                assetType = asset.type
+                currentBalance = asset.balance.toString().formatToThousandSeparator()
+            } else {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Aset tidak ditemukan"))
             }
         }
     }
 
-    fun getAssetById(id: Int) {
+
+    fun onNameChange(text: String) {
+        assetName = text
+    }
+
+    fun onTypeChange(type: String) {
+        assetType = type
+    }
+
+    fun onBalanceChange(text: String) {
+        currentBalance = text.formatToThousandSeparator()
+    }
+
+    fun onSaveAsset() {
         viewModelScope.launch {
-            _assetDetailState.value = Resource.Loading()
+            if (assetName.isBlank()) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Nama aset tidak boleh kosong"))
+                return@launch
+            }
+
             try {
-                val asset = getAssetByIdUseCase(id)
-                if (asset != null) {
-                    _assetDetailState.value = Resource.Success(asset)
+                val balanceValue = currentBalance.cleanToDouble()
+
+                if (currentAssetId != null) {
+                    val updatedAsset = Asset(
+                        id = currentAssetId!!,
+                        name = assetName,
+                        type = assetType,
+                        balance = balanceValue,
+                        unit = "IDR",
+                        currencySymbol = "Rp",
+                        isActive = true
+                    )
+                    updateAssetUseCase(updatedAsset)
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Aset berhasil diperbarui"))
                 } else {
-                    _assetDetailState.value = Resource.Error("Aset tidak ditemukan")
+                    val newAsset = Asset(
+                        id = 0,
+                        name = assetName,
+                        type = assetType,
+                        balance = 0.0,
+                        unit = "IDR",
+                        currencySymbol = "Rp",
+                        isActive = true
+                    )
+                    addAssetUseCase(newAsset, balanceValue)
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Aset berhasil ditambahkan"))
                 }
+
+                _eventFlow.emit(UiEvent.SaveSuccess)
+
             } catch (e: Exception) {
-                _assetDetailState.value = Resource.Error(e.message ?: "Gagal memuat data")
+                _eventFlow.emit(UiEvent.ShowSnackbar("Error: ${e.message}"))
             }
         }
     }
 
-    fun resetState() {
-        _saveState.value = null
+    sealed class UiEvent {
+        data object SaveSuccess : UiEvent()
+        data class ShowSnackbar(val message: String) : UiEvent()
     }
 }

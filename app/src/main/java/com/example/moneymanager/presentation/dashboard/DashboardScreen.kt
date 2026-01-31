@@ -1,37 +1,29 @@
 package com.example.moneymanager.presentation.dashboard
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneymanager.R
 import com.example.moneymanager.domain.model.Transaction
-import com.example.moneymanager.presentation.component.ErrorContent
-import com.example.moneymanager.presentation.component.IncomeExpenseRow
-import com.example.moneymanager.presentation.component.LoadingContent
-import com.example.moneymanager.presentation.component.TotalBalanceCard
-import com.example.moneymanager.presentation.component.TransactionItem
+import com.example.moneymanager.presentation.components.ErrorContent
+import com.example.moneymanager.presentation.components.LoadingContent
+import com.example.moneymanager.presentation.dashboard.components.IncomeExpenseRow
+import com.example.moneymanager.presentation.dashboard.components.RecentTransactionsSection
+import com.example.moneymanager.presentation.dashboard.components.TotalBalanceCard
 import com.example.moneymanager.presentation.theme.income
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun DashboardScreen(
@@ -41,28 +33,35 @@ fun DashboardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val deleteMessage = "Transaksi dihapus"
-    val undoLabel = "BATAL"
+
+    LaunchedEffect(key1 = true) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is DashboardViewModel.DashboardEvent.ShowUndoSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = "BATAL",
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.restoreTransaction()
+                    }
+                }
+                is DashboardViewModel.DashboardEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
 
     DashboardContent(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
-        onRetry = ({ viewModel.retryLoading() }),
+        onRetry = { viewModel.retryLoading() },
         onNavigateToAddTransaction = onNavigateToAddTransaction,
         onNavigateToBudget = onNavigateToBudget,
         onDeleteTransaction = { transaction ->
             viewModel.deleteTransaction(transaction)
-            scope.launch {
-                val result = snackbarHostState.showSnackbar(
-                    message = deleteMessage,
-                    actionLabel = undoLabel,
-                    duration = SnackbarDuration.Short
-                )
-                if (result == SnackbarResult.ActionPerformed) {
-                    viewModel.restoreTransaction()
-                }
-            }
         }
     )
 }
@@ -128,7 +127,6 @@ private fun DashboardContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DashboardSuccessContent(
     uiState: DashboardUiState,
@@ -154,77 +152,13 @@ private fun DashboardSuccessContent(
         }
 
         item {
-            Text(
-                text = stringResource(R.string.recent_transactions),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                )
-            ) {
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    val recentList = uiState.recentTransactions
-
-                    if (recentList.isEmpty()) {
-                        Text(
-                            text = "Belum ada transaksi",
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        recentList.forEach { transaction ->
-                            key(transaction.id) {
-                                val dismissState = rememberSwipeToDismissBoxState(
-                                    confirmValueChange = {
-                                        if (it == SwipeToDismissBoxValue.EndToStart) {
-                                            onDeleteTransaction(transaction)
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    }
-                                )
-                                SwipeToDismissBox(
-                                    state = dismissState,
-                                    enableDismissFromStartToEnd = false,
-                                    backgroundContent = {
-                                        val color = MaterialTheme.colorScheme.errorContainer
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(color)
-                                                .padding(horizontal = 20.dp),
-                                            contentAlignment = Alignment.CenterEnd
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Hapus",
-                                                tint = MaterialTheme.colorScheme.onErrorContainer
-                                            )
-                                        }
-                                    }
-                                ) {
-                                    TransactionItem(
-                                        transaction = transaction,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .padding(horizontal = 16.dp)
-                                            .clickable { onNavigateToAddTransaction(transaction.id) }
-                                    )
-                                }
-                            }
-                        }
-                    }
+            RecentTransactionsSection(
+                transactions = uiState.recentTransactions,
+                onDeleteTransaction = onDeleteTransaction,
+                onTransactionClick = { transactionId ->
+                    onNavigateToAddTransaction(transactionId)
                 }
-            }
+            )
         }
     }
 }

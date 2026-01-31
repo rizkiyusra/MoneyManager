@@ -7,10 +7,8 @@ import com.example.moneymanager.domain.usecase.dashboard.GetDashboardDataUseCase
 import com.example.moneymanager.domain.usecase.transaction.AddTransactionUseCase
 import com.example.moneymanager.domain.usecase.transaction.DeleteTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,57 +18,75 @@ class DashboardViewModel @Inject constructor(
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val addTransactionUseCase: AddTransactionUseCase
 ) : ViewModel() {
+    private val _retryTrigger = MutableSharedFlow<Unit>(replay = 1)
 
-    private val _uiState = MutableStateFlow(DashboardUiState(isLoading = true))
-    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
-
-    init {
-        loadDashboardData()
-    }
-
-    fun retryLoading() {
-        loadDashboardData()
-    }
-
-    private fun loadDashboardData() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<DashboardUiState> = _retryTrigger
+        .onStart { emit(Unit) }
+        .flatMapLatest {
             getDashboardDataUseCase()
-                .catch { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message ?: "Terjadi kesalahan tidak diketahui"
-                    )
-                }
-                .collect { dashboardData ->
-                    _uiState.value = DashboardUiState(
+                .map { data ->
+                    DashboardUiState(
                         isLoading = false,
                         error = null,
-                        totalBalance = dashboardData.totalBalance,
-                        monthlyIncome = dashboardData.monthlyIncome,
-                        monthlyExpense = dashboardData.monthlyExpense,
-                        recentTransactions = dashboardData.recentTransactions
+                        totalBalance = data.totalBalance,
+                        monthlyIncome = data.monthlyIncome,
+                        monthlyExpense = data.monthlyExpense,
+                        recentTransactions = data.recentTransactions
                     )
                 }
+                .onStart {
+                    emit(DashboardUiState(isLoading = true))
+                }
+                .catch { e ->
+                    emit(DashboardUiState(isLoading = false, error = e.message ?: "Terjadi kesalahan"))
+                }
         }
-    }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = DashboardUiState(isLoading = true)
+        )
+
+    private val _eventFlow = MutableSharedFlow<DashboardEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     private var recentlyDeletedTransaction: Transaction? = null
 
-    fun deleteTransaction(transaction: Transaction)  {
+    fun retryLoading() {
         viewModelScope.launch {
-            recentlyDeletedTransaction = transaction
-            deleteTransactionUseCase(transaction)
+            _retryTrigger.emit(Unit)
+        }
+    }
+
+    fun deleteTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            try {
+                recentlyDeletedTransaction = transaction
+                deleteTransactionUseCase(transaction)
+
+                _eventFlow.emit(DashboardEvent.ShowUndoSnackbar("Transaksi dihapus"))
+            } catch (e: Exception) {
+                _eventFlow.emit(DashboardEvent.ShowError("Gagal menghapus: ${e.message}"))
+            }
         }
     }
 
     fun restoreTransaction() {
         viewModelScope.launch {
             recentlyDeletedTransaction?.let { transaction ->
-                addTransactionUseCase(transaction)
-                recentlyDeletedTransaction = null
+                try {
+                    addTransactionUseCase(transaction)
+                    recentlyDeletedTransaction = null
+                } catch (_: Exception) {
+                    _eventFlow.emit(DashboardEvent.ShowError("Gagal mengembalikan data"))
+                }
             }
         }
+    }
+
+    sealed class DashboardEvent {
+        data class ShowUndoSnackbar(val message: String) : DashboardEvent()
+        data class ShowError(val message: String) : DashboardEvent()
     }
 }

@@ -2,8 +2,7 @@ package com.example.moneymanager.presentation.recurring
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneymanager.domain.model.Asset
-import com.example.moneymanager.domain.model.Category
+import com.example.moneymanager.common.state.Resource
 import com.example.moneymanager.domain.model.RecurringTransaction
 import com.example.moneymanager.domain.usecase.asset.GetAssetsUseCase
 import com.example.moneymanager.domain.usecase.category.GetCategoriesUseCase
@@ -11,9 +10,8 @@ import com.example.moneymanager.domain.usecase.recurring.AddRecurringUseCase
 import com.example.moneymanager.domain.usecase.recurring.DeleteRecurringUseCase
 import com.example.moneymanager.domain.usecase.recurring.GetRecurringTransactionsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import javax.inject.Inject
@@ -21,49 +19,42 @@ import javax.inject.Inject
 @HiltViewModel
 class RecurringViewModel @Inject constructor(
     private val addRecurringUseCase: AddRecurringUseCase,
-    private val getRecurringUseCase: GetRecurringTransactionsUseCase,
+    getRecurringUseCase: GetRecurringTransactionsUseCase,
     private val deleteRecurringUseCase: DeleteRecurringUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
-    private val getAssetsUseCase: GetAssetsUseCase
+    getAssetsUseCase: GetAssetsUseCase
 ) : ViewModel() {
 
-    private val _recurringList = MutableStateFlow<List<RecurringTransaction>>(emptyList())
-    val recurringList: StateFlow<List<RecurringTransaction>> = _recurringList.asStateFlow()
+    private val _isIncomeType = MutableStateFlow(false)
+    val isIncomeType = _isIncomeType.asStateFlow()
 
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
-
-    private val _assets = MutableStateFlow<List<Asset>>(emptyList())
-    val assets: StateFlow<List<Asset>> = _assets.asStateFlow()
-
-    init {
-        loadData()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val categoriesFlow = _isIncomeType.flatMapLatest { isIncome ->
+        getCategoriesUseCase(isIncome)
     }
 
-    private fun loadData() {
-        viewModelScope.launch {
-            getRecurringUseCase().collect {
-                _recurringList.value = it
-            }
-        }
-        viewModelScope.launch {
-            getCategoriesUseCase(false).collect {
-                _categories.value = it
-            }
-        }
-        viewModelScope.launch {
-            getAssetsUseCase().collect {
-                _assets.value = it
-            }
-        }
-    }
+    val uiState: StateFlow<RecurringUiState> = combine(
+        getRecurringUseCase(),
+        getAssetsUseCase(),
+        categoriesFlow
+    ) { transactions, assets, categories ->
+        RecurringUiState(
+            isLoading = false,
+            transactions = transactions,
+            assets = assets,
+            categories = categories
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = RecurringUiState(isLoading = true)
+    )
 
-    fun loadCategories(isIncome: Boolean) {
-        viewModelScope.launch {
-            getCategoriesUseCase(isIncome).collect {
-                _categories.value = it
-            }
-        }
+    private val _actionState = MutableStateFlow<Resource<String>?>(null)
+    val actionState = _actionState.asStateFlow()
+
+    fun onTypeChanged(isIncome: Boolean) {
+        _isIncomeType.value = isIncome
     }
 
     fun saveRecurringTransaction(
@@ -75,26 +66,47 @@ class RecurringViewModel @Inject constructor(
         frequency: String
     ) {
         viewModelScope.launch {
-            val nextRun = calculateNextRun(System.currentTimeMillis(), frequency)
+            if (amount <= 0) {
+                _actionState.value = Resource.Error("Jumlah harus lebih dari 0")
+                return@launch
+            }
 
-            val recurring = RecurringTransaction(
-                amount = amount,
-                note = note,
-                isIncome = isIncome,
-                categoryId = categoryId,
-                assetId = assetId,
-                frequency = frequency,
-                nextRunDate = nextRun,
-                createdDate = System.currentTimeMillis()
-            )
-            addRecurringUseCase(recurring)
+            _actionState.value = Resource.Loading()
+            try {
+                val nextRun = calculateNextRun(System.currentTimeMillis(), frequency)
+
+                val recurring = RecurringTransaction(
+                    id = 0,
+                    amount = amount,
+                    note = note,
+                    isIncome = isIncome,
+                    categoryId = categoryId,
+                    assetId = assetId,
+                    frequency = frequency,
+                    nextRunDate = nextRun,
+                    createdDate = System.currentTimeMillis()
+                )
+                addRecurringUseCase(recurring)
+                _actionState.value = Resource.Success("Jadwal transaksi berhasil disimpan")
+            } catch (e: Exception) {
+                _actionState.value = Resource.Error(e.message ?: "Gagal menyimpan jadwal")
+            }
         }
     }
 
     fun deleteRecurring(item: RecurringTransaction) {
         viewModelScope.launch {
-            deleteRecurringUseCase(item)
+            try {
+                deleteRecurringUseCase(item)
+                _actionState.value = Resource.Success("Jadwal dihapus")
+            } catch (e: Exception) {
+                _actionState.value = Resource.Error("Gagal menghapus: ${e.message}")
+            }
         }
+    }
+
+    fun onActionStateHandled() {
+        _actionState.value = null
     }
 
     private fun calculateNextRun(currentTime: Long, frequency: String): Long {

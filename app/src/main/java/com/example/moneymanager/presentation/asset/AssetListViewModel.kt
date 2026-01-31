@@ -7,10 +7,8 @@ import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.usecase.asset.DeleteAssetUseCase
 import com.example.moneymanager.domain.usecase.asset.GetAssetsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,19 +17,29 @@ class AssetListViewModel @Inject constructor(
     private val getAssetsUseCase: GetAssetsUseCase,
     private val deleteAssetUseCase: DeleteAssetUseCase
 ) : ViewModel() {
+    private val _retryTrigger = MutableSharedFlow<Unit>(replay = 1)
 
-    private val _assetsState = MutableStateFlow<Resource<List<Asset>>>(Resource.Loading())
-    val assetsState: StateFlow<Resource<List<Asset>>> = _assetsState.asStateFlow()
-
-    init {
-        getAssets()
-    }
-
-    private fun getAssets() {
-        viewModelScope.launch {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val assetsState: StateFlow<Resource<List<Asset>>> = _retryTrigger
+        .onStart { emit(Unit) }
+        .flatMapLatest {
             getAssetsUseCase()
-                .catch { e -> _assetsState.value = Resource.Error(e.message ?: "Unknown Error") }
-                .collect { list -> _assetsState.value = Resource.Success(list) }
+                .map { Resource.Success(it) as Resource<List<Asset>> }
+                .onStart { emit(Resource.Loading()) }
+                .catch { emit(Resource.Error(it.message ?: "Unknown Error")) }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = Resource.Loading()
+        )
+
+    private val _deleteState = MutableStateFlow<String?>(null)
+    val deleteState = _deleteState.asStateFlow()
+
+    fun getAssets() {
+        viewModelScope.launch {
+            _retryTrigger.emit(Unit)
         }
     }
 
@@ -39,9 +47,15 @@ class AssetListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 deleteAssetUseCase(asset)
+                _deleteState.value = null
             } catch (e: Exception) {
                 e.printStackTrace()
-                _assetsState.value = Resource.Error("Gagal menghapus: ${e.message}")            }
+                _deleteState.value = "Gagal menghapus: ${e.message}"
+            }
         }
+    }
+
+    fun onErrorMessageShown() {
+        _deleteState.value = null
     }
 }

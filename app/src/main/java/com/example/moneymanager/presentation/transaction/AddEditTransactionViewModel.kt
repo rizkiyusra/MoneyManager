@@ -1,9 +1,14 @@
 package com.example.moneymanager.presentation.transaction
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneymanager.common.state.Resource
+import com.example.moneymanager.common.extension.cleanToDouble
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Category
 import com.example.moneymanager.domain.model.Transaction
@@ -16,9 +21,8 @@ import com.example.moneymanager.domain.usecase.transaction.AddTransferUseCase
 import com.example.moneymanager.domain.usecase.transaction.DeleteTransactionUseCase
 import com.example.moneymanager.domain.usecase.transaction.EditTransactionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -29,158 +33,161 @@ class AddEditTransactionViewModel @Inject constructor(
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val addTransferUseCase: AddTransferUseCase,
-    private val getAssetsUseCase: GetAssetsUseCase,
+    getAssetsUseCase: GetAssetsUseCase,
     private val repository: TransactionRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+    var amount by mutableStateOf("")
+        private set
+    var note by mutableStateOf("")
+        private set
+    var date by mutableLongStateOf(System.currentTimeMillis())
+        private set
+    var type by mutableStateOf(TransactionType.EXPENSE)
+        private set
 
-    private val _saveState = MutableStateFlow<Resource<Unit>?>(null)
-    val saveState: StateFlow<Resource<Unit>?> = _saveState.asStateFlow()
+    var selectedCategoryId by mutableStateOf<Int?>(null)
+        private set
+    var selectedFromAssetId by mutableStateOf<Int?>(null)
+        private set
+    var selectedToAssetId by mutableStateOf<Int?>(null)
+        private set
 
-    private val _transactionToEdit = MutableStateFlow<Transaction?>(null)
-    val transactionToEdit: StateFlow<Transaction?> = _transactionToEdit.asStateFlow()
-    val currentTransactionId: Int = savedStateHandle.get<Int>("transactionId")?.takeIf { it != -1 } ?: 0
+    val assets: StateFlow<List<Asset>> = getAssetsUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _categories = MutableStateFlow<List<Category>?>(emptyList())
-    val categories: StateFlow<List<Category>?> = _categories.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val categories: StateFlow<List<Category>> = snapshotFlow { type }
+        .flatMapLatest { transactionType ->
+            val isIncome = transactionType == TransactionType.INCOME
+            getCategoriesUseCase(isIncome)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _selectedCategory = MutableStateFlow<Category?>(null)
-    val selectedCategory: StateFlow<Category?> = _selectedCategory.asStateFlow()
+    private val currentTransactionId: Int = savedStateHandle.get<Int>("transactionId")?.takeIf { it != -1 } ?: 0
+    private var currentTransaction: Transaction? = null
 
-    private val _assets = MutableStateFlow<List<Asset>?>(emptyList())
-    val assets: StateFlow<List<Asset>?> = _assets.asStateFlow()
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
 
     init {
-        loadAssets()
-
         if (currentTransactionId != 0) {
             loadTransaction(currentTransactionId)
-        } else {
-            loadCategories(isIncomeCategory = false)
-        }
-    }
-
-    private fun loadAssets() {
-        viewModelScope.launch {
-            getAssetsUseCase().collect { list ->
-                _assets.value = list
-            }
         }
     }
 
     private fun loadTransaction(id: Int) {
         viewModelScope.launch {
             val transaction = repository.getTransactionById(id)
-            _transactionToEdit.value = transaction
-
+            currentTransaction = transaction
             transaction?.let { tx ->
-                val isIncome = tx.type == TransactionType.INCOME
-                loadCategories(isIncome) { categoryList ->
-                    val matchingCategory = categoryList.find { it.id == tx.categoryId }
-                    _selectedCategory.value = matchingCategory
-                }
+                amount = if (tx.amount == 0.0) "" else tx.amount.toLong().toString()
+                note = tx.note ?: ""
+                date = tx.date
+                type = tx.type
+                selectedCategoryId = tx.categoryId
+                selectedFromAssetId = tx.fromAssetId
             }
         }
     }
 
-    fun loadCategories(isIncomeCategory: Boolean, onLoaded: ((List<Category>) -> Unit)? = null) {
-        if (onLoaded == null) {
-            _selectedCategory.value = null
-        }
+    fun onAmountChange(value: String) { amount = value }
+    fun onNoteChange(value: String) { note = value }
+    fun onDateChange(value: Long) { date = value }
+    fun onTypeChange(newType: TransactionType) {
+        type = newType
+    }
+    fun onCategorySelect(id: Int) { selectedCategoryId = id }
+    fun onFromAssetSelect(id: Int) { selectedFromAssetId = id }
+    fun onToAssetSelect(id: Int) { selectedToAssetId = id }
 
+    fun onSaveTransaction() {
         viewModelScope.launch {
-            getCategoriesUseCase(isIncomeCategory).collect { list ->
-                _categories.value = list
-                onLoaded?.invoke(list)
+            val amountVal = amount.cleanToDouble()
+            if (amountVal <= 0) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Masukkan jumlah yang valid"))
+                return@launch
             }
-        }
-    }
+            if (selectedFromAssetId == null) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Pilih dompet asal"))
+                return@launch
+            }
 
-    fun onCategorySelected(category: Category) {
-        _selectedCategory.value = category
-    }
+            try {
+                if (type == TransactionType.TRANSFER_OUT) {
+                    if (selectedToAssetId == null) {
+                        _eventFlow.emit(UiEvent.ShowSnackbar("Pilih dompet tujuan"))
+                        return@launch
+                    }
+                    if (selectedFromAssetId == selectedToAssetId) {
+                        _eventFlow.emit(UiEvent.ShowSnackbar("Dompet tujuan tidak boleh sama"))
+                        return@launch
+                    }
 
-    fun saveTransaction(
-        amount: Double,
-        note: String,
-        type: TransactionType,
-        date: Long,
-        categoryId: Int,
-        fromAssetId: Int,
-        toAssetId: Int? = null
-    ) {
-        viewModelScope.launch {
-            _saveState.value = Resource.Loading()
+                    addTransferUseCase(
+                        amount = amountVal,
+                        note = note,
+                        date = date,
+                        fromAssetId = selectedFromAssetId!!,
+                        toAssetId = selectedToAssetId!!
+                    )
 
-            if (type == TransactionType.TRANSFER_OUT) {
-
-                if (toAssetId == null) {
-                    _saveState.value = Resource.Error("Dompet Tujuan harus dipilih!")
-                    return@launch
-                }
-
-                val result = addTransferUseCase(
-                    amount = amount,
-                    note = note,
-                    date = date,
-                    fromAssetId = fromAssetId,
-                    toAssetId = toAssetId
-                )
-                _saveState.value = result
-
-            } else {
-                if (categoryId == 0) {
-                    _saveState.value = Resource.Error("Silakan pilih kategori!")
-                    return@launch
-                }
-
-                val currentCategory = _categories.value?.find { it.id == categoryId }
-                val currentAsset = _assets.value?.find { it.id == fromAssetId }
-
-                val transaction = Transaction(
-                    id = currentTransactionId,
-                    amount = amount,
-                    note = note,
-                    type = type,
-                    date = date,
-                    categoryName = currentCategory?.name ?: "",
-                    categoryIcon = currentCategory?.icon ?: "",
-                    categoryColor = currentCategory?.color ?: 0,
-                    fromAssetId = fromAssetId,
-                    fromAssetName = currentAsset?.name ?: "",
-                    categoryId = categoryId,
-                    title = note.ifEmpty { currentCategory?.name ?: "Transaksi" },
-                    currency = "IDR",
-                    convertedAmountIDR = amount,
-                    exchangeRate = 1.0,
-                    location = null,
-                    receiptImagePath = null,
-                    createdDate = System.currentTimeMillis()
-                )
-
-                val result = if (currentTransactionId != 0) {
-                    editTransactionUseCase(transaction)
                 } else {
-                    addTransactionUseCase(transaction)
+                    if (selectedCategoryId == null || selectedCategoryId == 0) {
+                        _eventFlow.emit(UiEvent.ShowSnackbar("Pilih kategori"))
+                        return@launch
+                    }
+
+                    val category = categories.value.find { it.id == selectedCategoryId }
+                    val asset = assets.value.find { it.id == selectedFromAssetId }
+
+                    val transaction = Transaction(
+                        id = currentTransactionId,
+                        amount = amountVal,
+                        note = note,
+                        type = type,
+                        date = date,
+                        categoryName = category?.name ?: "",
+                        categoryIcon = category?.icon ?: "",
+                        categoryColor = category?.color ?: 0,
+                        fromAssetId = selectedFromAssetId!!,
+                        fromAssetName = asset?.name ?: "",
+                        categoryId = selectedCategoryId!!,
+                        title = note.ifEmpty { category?.name ?: "Transaksi" },
+                        currency = "IDR",
+                        convertedAmountIDR = amountVal,
+                        exchangeRate = 1.0,
+                        location = null,
+                        receiptImagePath = null,
+                        createdDate = if (currentTransactionId == 0) System.currentTimeMillis() else currentTransaction!!.createdDate
+                    )
+
+                    if (currentTransactionId != 0) {
+                        editTransactionUseCase(transaction)
+                    } else {
+                        addTransactionUseCase(transaction)
+                    }
                 }
 
-                _saveState.value = result
+                _eventFlow.emit(UiEvent.SaveSuccess)
+
+            } catch (e: Exception) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Error: ${e.message}"))
             }
         }
     }
 
-    fun deleteTransaction() {
-        val transaction = _transactionToEdit.value
-        if (transaction != null) {
-            viewModelScope.launch {
-                _saveState.value = Resource.Loading()
-                val result = deleteTransactionUseCase(transaction)
-                _saveState.value = result
+    fun onDeleteTransaction() {
+        viewModelScope.launch {
+            currentTransaction?.let {
+                deleteTransactionUseCase(it)
+                _eventFlow.emit(UiEvent.SaveSuccess)
             }
         }
     }
 
-    fun resetState() {
-        _saveState.value = null
+    sealed class UiEvent {
+        data object SaveSuccess : UiEvent()
+        data class ShowSnackbar(val message: String) : UiEvent()
     }
 }

@@ -7,12 +7,8 @@ import com.example.moneymanager.domain.model.Category
 import com.example.moneymanager.domain.usecase.category.DeleteCategoryUseCase
 import com.example.moneymanager.domain.usecase.category.GetCategoriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,54 +18,51 @@ class CategoryListViewModel @Inject constructor(
     private val deleteCategoryUseCase: DeleteCategoryUseCase
 ) : ViewModel() {
 
-    private val _categoriesState = MutableStateFlow<Resource<List<Category>>>(Resource.Loading())
-    val categoriesState: StateFlow<Resource<List<Category>>> = _categoriesState.asStateFlow()
-
     private val _selectedFilter = MutableStateFlow<Boolean?>(null)
     val selectedFilter: StateFlow<Boolean?> = _selectedFilter.asStateFlow()
 
-    private var loadJob: Job? = null
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val categoriesState: StateFlow<Resource<List<Category>>> = _selectedFilter
+        .flatMapLatest { isIncome ->
+            val flow = if (isIncome == null) {
+                getCategoriesUseCase()
+            } else {
+                getCategoriesUseCase(isIncome)
+            }
+            flow.map { Resource.Success(it) as Resource<List<Category>> }
+                .onStart { emit(Resource.Loading()) }
+                .catch { emit(Resource.Error(it.message ?: "Gagal memuat kategori")) }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = Resource.Loading()
+        )
 
-    init {
-        loadCategories()
-    }
+    private val _actionState = MutableStateFlow<Resource<String>?>(null)
+    val actionState = _actionState.asStateFlow()
 
     fun onFilterChanged(isIncome: Boolean?) {
         _selectedFilter.value = isIncome
-        loadCategories()
     }
 
     fun deleteCategory(category: Category) {
         viewModelScope.launch {
+            _actionState.value = Resource.Loading()
             try {
                 deleteCategoryUseCase(category.id)
-            } catch (_: Exception) {
+                _actionState.value = Resource.Success("Kategori '${category.name}' berhasil dihapus")
+            } catch (e: Exception) {
+                _actionState.value = Resource.Error("Gagal menghapus: ${e.message}")
             }
         }
     }
 
-    private fun loadCategories() {
-        loadJob?.cancel()
+    fun onActionStateHandled() {
+        _actionState.value = null
+    }
 
-        loadJob = viewModelScope.launch {
-            val filter = _selectedFilter.value
-
-            val flow = if (filter == null) {
-                getCategoriesUseCase()
-            } else {
-                getCategoriesUseCase(filter)
-            }
-
-            flow
-                .onStart {
-                    _categoriesState.value = Resource.Loading()
-                }
-                .catch { e ->
-                    _categoriesState.value = Resource.Error(e.message ?: "Gagal memuat kategori")
-                }
-                .collect { list ->
-                    _categoriesState.value = Resource.Success(list)
-                }
-        }
+    fun retry() {
+        _selectedFilter.value = _selectedFilter.value
     }
 }

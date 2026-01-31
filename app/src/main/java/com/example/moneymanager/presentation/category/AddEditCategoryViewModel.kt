@@ -47,15 +47,19 @@ class AddEditCategoryViewModel @Inject constructor(
     init {
         savedStateHandle.get<Int>("categoryId")?.let { id ->
             if (id != -1) {
-                viewModelScope.launch {
-                    getCategoryByIdUseCase(id)?.let { category ->
-                        currentCategoryId = category.id
-                        categoryName = category.name
-                        isIncomeCategory = category.isIncomeCategory
-                        categoryIcon = category.icon
-                        categoryColor = category.color
-                    }
-                }
+                loadCategory(id)
+            }
+        }
+    }
+
+    private fun loadCategory(id: Int) {
+        viewModelScope.launch {
+            getCategoryByIdUseCase(id)?.let { category ->
+                currentCategoryId = category.id
+                categoryName = category.name
+                isIncomeCategory = category.isIncomeCategory
+                categoryIcon = category.icon
+                categoryColor = category.color
             }
         }
     }
@@ -78,15 +82,15 @@ class AddEditCategoryViewModel @Inject constructor(
 
     fun onSaveCategory() {
         viewModelScope.launch {
-            try {
-                if (categoryName.isBlank()) {
-                    _eventFlow.emit(UiEvent.ShowSnackbar("Nama kategori tidak boleh kosong"))
-                    return@launch
-                }
+            if (categoryName.isBlank()) {
+                _eventFlow.emit(UiEvent.ShowSnackbar("Nama kategori tidak boleh kosong"))
+                return@launch
+            }
 
+            try {
                 val category = Category(
                     id = currentCategoryId ?: 0,
-                    name = categoryName,
+                    name = categoryName.trim(),
                     isIncomeCategory = isIncomeCategory,
                     icon = categoryIcon,
                     color = categoryColor,
@@ -96,8 +100,10 @@ class AddEditCategoryViewModel @Inject constructor(
 
                 if (currentCategoryId != null) {
                     updateCategoryUseCase(category)
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Kategori berhasil diperbarui"))
                 } else {
                     addCategoryUseCase(category)
+                    _eventFlow.emit(UiEvent.ShowSnackbar("Kategori berhasil dibuat"))
                 }
 
                 _eventFlow.emit(UiEvent.SaveCategorySuccess)
@@ -109,7 +115,7 @@ class AddEditCategoryViewModel @Inject constructor(
     }
 
     sealed class UiEvent {
-        object SaveCategorySuccess : UiEvent()
+        data object SaveCategorySuccess : UiEvent()
         data class ShowSnackbar(val message: String) : UiEvent()
     }
 }

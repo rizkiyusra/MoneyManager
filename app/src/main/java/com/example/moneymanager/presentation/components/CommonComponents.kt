@@ -1,4 +1,4 @@
-package com.example.moneymanager.presentation.component
+package com.example.moneymanager.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

@@ -5,31 +5,26 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.moneymanager.common.extension.cleanToDouble
-import com.example.moneymanager.common.extension.formatToThousandSeparator
+import com.example.moneymanager.common.state.Resource
 import com.example.moneymanager.domain.model.Budget
 import com.example.moneymanager.domain.model.Category
-import com.example.moneymanager.common.extension.toRupiah
+import com.example.moneymanager.presentation.budget.components.AddBudgetDialog
+import com.example.moneymanager.presentation.budget.components.BudgetItemCard
 import java.text.DateFormatSymbols
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetScreen(
     navController: NavController,
@@ -39,16 +34,64 @@ fun BudgetScreen(
     val categories by viewModel.categories.collectAsState()
     val currentMonth by viewModel.currentMonth.collectAsState()
     val currentYear by viewModel.currentYear.collectAsState()
+    val actionState by viewModel.actionState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(actionState) {
+        actionState?.let { resource ->
+            when (resource) {
+                is Resource.Success -> {
+                    resource.data?.let { snackbarHostState.showSnackbar(it) }
+                    viewModel.onActionStateHandled()
+                }
+                is Resource.Error -> {
+                    resource.message?.let { snackbarHostState.showSnackbar("Error: $it") }
+                    viewModel.onActionStateHandled()
+                }
+                is Resource.Loading -> {}
+            }
+        }
+    }
+
+    BudgetContent(
+        budgetList = budgetList,
+        categories = categories,
+        currentMonth = currentMonth,
+        currentYear = currentYear,
+        snackbarHostState = snackbarHostState,
+        onNavigateBack = { navController.popBackStack() },
+        onPreviousMonth = { viewModel.changeMonth(-1) },
+        onNextMonth = { viewModel.changeMonth(1) },
+        onAddBudget = { catId, name, limit -> viewModel.addBudget(catId, name, limit) },
+        onDeleteBudget = { budget -> viewModel.deleteBudget(budget) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BudgetContent(
+    budgetList: List<Budget>,
+    categories: List<Category>,
+    currentMonth: Int,
+    currentYear: Int,
+    snackbarHostState: SnackbarHostState,
+    onNavigateBack: () -> Unit,
+    onPreviousMonth: () -> Unit,
+    onNextMonth: () -> Unit,
+    onAddBudget: (Int, String, Double) -> Unit,
+    onDeleteBudget: (Budget) -> Unit
+) {
     var showAddDialog by remember { mutableStateOf(false) }
     var budgetToDelete by remember { mutableStateOf<Budget?>(null) }
+    val monthName = remember(currentMonth) { DateFormatSymbols().months[currentMonth] }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Anggaran Bulanan") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
                     }
                 }
@@ -61,42 +104,38 @@ fun BudgetScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { viewModel.changeMonth(-1) }) {
+                IconButton(onClick = onPreviousMonth) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Prev")
                 }
-
-                val monthName = DateFormatSymbols().months[currentMonth]
                 Text(
                     text = "$monthName $currentYear",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-
-                IconButton(onClick = { viewModel.changeMonth(1) }) {
+                IconButton(onClick = onNextMonth) {
                     Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next")
                 }
             }
 
             if (budgetList.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Belum ada anggaran bulan ini.", color = Color.Gray)
+                    Text("Belum ada anggaran bulan ini.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(budgetList) { budget ->
+                    items(items = budgetList, key = { it.id }) { budget ->
                         BudgetItemCard(
                             budget = budget,
                             onDelete = { budgetToDelete = budget }
@@ -111,7 +150,7 @@ fun BudgetScreen(
                 categories = categories,
                 onDismiss = { showAddDialog = false },
                 onSave = { catId, name, limit ->
-                    viewModel.addBudget(catId, name, limit)
+                    onAddBudget(catId, name, limit)
                     showAddDialog = false
                 }
             )
@@ -120,13 +159,12 @@ fun BudgetScreen(
         if (budgetToDelete != null) {
             AlertDialog(
                 onDismissRequest = { budgetToDelete = null },
-                icon = { Icon(Icons.Default.Delete, contentDescription = null) },
                 title = { Text("Hapus Anggaran?") },
-                text = { Text("Anggaran '${budgetToDelete?.name}' akan dihapus dari bulan ini.") },
+                text = { Text("Hapus '${budgetToDelete?.name}'?") },
                 confirmButton = {
                     Button(
                         onClick = {
-                            budgetToDelete?.let { viewModel.deleteBudget(it) }
+                            budgetToDelete?.let { onDeleteBudget(it) }
                             budgetToDelete = null
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
@@ -140,153 +178,30 @@ fun BudgetScreen(
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun BudgetItemCard(budget: Budget, onDelete: () -> Unit) {
-    val progress = if (budget.limit > 0) (budget.currentSpent / budget.limit).toFloat() else 0f
+private fun BudgetScreenPreview() {
+    val dummyCategories = listOf(
+        Category(1, "Makanan", "Desc", false, android.graphics.Color.RED, "fastfood"),
+        Category(2, "Transport", "Desc", false, android.graphics.Color.BLUE, "directions_car")
+    )
+    val dummyBudgets = listOf(
+        Budget(1, 1, "Makanan", 1000000.0, "Monthly", 0, 2024, 500000.0),
+        Budget(2, 2, "Bensin", 300000.0, "Monthly", 0, 2024, 280000.0)
+    )
 
-    val progressColor = when {
-        progress >= 1f -> Color.Red
-        progress >= 0.8f -> Color(0xFFFF9800)
-        else -> Color(0xFF4CAF50)
-    }
-
-    Card(elevation = CardDefaults.cardElevation(4.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(text = budget.name, fontWeight = FontWeight.Bold)
-                IconButton(onClick = onDelete, modifier = Modifier.size(20.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Gray)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = budget.currentSpent.toRupiah(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = progressColor
-                )
-                Text(
-                    text = budget.limit.toRupiah(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LinearProgressIndicator(
-                progress = { progress.coerceAtMost(1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                color = progressColor,
-                trackColor = Color.LightGray.copy(alpha = 0.5f),
-            )
-
-            Text(
-                text = "${(progress * 100).toInt()}% Terpakai",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.End).padding(top = 4.dp)
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddBudgetDialog(
-    categories: List<Category>,
-    onDismiss: () -> Unit,
-    onSave: (Int, String, Double) -> Unit
-) {
-    var amount by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(categories.firstOrNull()) }
-    var expanded by remember { mutableStateOf(false) }
-
-    LaunchedEffect(categories) {
-        if (selectedCategory == null && categories.isNotEmpty()) {
-            selectedCategory = categories.first()
-        }
-    }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Buat Anggaran Baru", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-
-                if (categories.isNotEmpty()) {
-                    Text("Pilih Kategori:", style = MaterialTheme.typography.bodySmall)
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedCategory?.name ?: "Pilih Kategori",
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true).fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                            )
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            categories.forEach { category ->
-                                DropdownMenuItem(
-                                    text = { Text(category.name) },
-                                    onClick = {
-                                        selectedCategory = category
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Text("Belum ada kategori. Silakan buat kategori dulu.", color = Color.Red, style = MaterialTheme.typography.bodySmall)
-                }
-
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = {
-                        amount = it.formatToThousandSeparator()
-                    },
-                    label = { Text("Batas Anggaran (Rp)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        val limit = amount.cleanToDouble()
-                        if (limit > 0 && selectedCategory != null) {
-                            onSave(selectedCategory!!.id, selectedCategory!!.name, limit)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = amount.isNotEmpty() && selectedCategory != null
-                ) {
-                    Text("Simpan Anggaran")
-                }
-            }
-        }
+    MaterialTheme {
+        BudgetContent(
+            budgetList = dummyBudgets,
+            categories = dummyCategories,
+            currentMonth = 0,
+            currentYear = 2024,
+            snackbarHostState = remember { SnackbarHostState() },
+            onNavigateBack = {},
+            onPreviousMonth = {},
+            onNextMonth = {},
+            onAddBudget = { _, _, _ -> },
+            onDeleteBudget = {}
+        )
     }
 }

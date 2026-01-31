@@ -5,16 +5,14 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,63 +21,103 @@ import com.example.moneymanager.navigation.AppNavigation
 import com.example.moneymanager.navigation.Screen
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Home : BottomNavItem(Screen.Dashboard.route, "Home", Icons.Default.Home)
-    object Wallet : BottomNavItem(Screen.Assets.route, "Aset", Icons.Default.AccountBalanceWallet)
-    object History : BottomNavItem("history", "History", Icons.Default.History)
-    object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
+    data object Home : BottomNavItem(Screen.Dashboard.route, "Home", Icons.Default.Home)
+    data object Wallet : BottomNavItem(Screen.Assets.route, "Aset", Icons.Default.AccountBalanceWallet)
+    data object History : BottomNavItem("history", "Riwayat", Icons.Default.History)
+    data object Profile : BottomNavItem(Screen.Profiles.route, "Profil", Icons.Default.Person)
 }
 
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Wallet,
-        BottomNavItem.History,
-        BottomNavItem.Profile
-    )
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val isBottomBarVisible = currentDestination?.route in items.map { it.route }
+
+    val bottomNavItems = remember {
+        listOf(
+            BottomNavItem.Home,
+            BottomNavItem.Wallet,
+            BottomNavItem.History,
+            BottomNavItem.Profile
+        )
+    }
+
+    val isBottomBarVisible = remember(currentDestination) {
+        currentDestination?.hierarchy?.any { destination ->
+            bottomNavItems.any { it.route == destination.route }
+        } == true
+    }
 
     Scaffold(
         bottomBar = {
             if (isBottomBarVisible) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ) {
-                    items.forEach { item ->
-                        val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-
-                        NavigationBarItem(
-                            icon = { Icon(item.icon, contentDescription = item.title) },
-                            label = { Text(item.title) },
-                            selected = selected,
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
-                }
+                BottomNavigationBar(
+                    navController = navController,
+                    items = bottomNavItems
+                )
             }
         }
     ) { innerPadding ->
         AppNavigation(
             navController = navController,
             innerPadding = innerPadding
+        )
+    }
+}
+
+@Composable
+fun BottomNavigationBar(
+    navController: NavController,
+    items: List<BottomNavItem>
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.primary,
+        tonalElevation = 8.dp
+    ) {
+        items.forEach { item ->
+            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+
+            NavigationBarItem(
+                icon = { Icon(imageVector = item.icon, contentDescription = item.title) },
+                label = { Text(text = item.title) },
+                selected = selected,
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                onClick = {
+                    navController.navigate(item.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MainScreenPreview() {
+    MaterialTheme {
+        BottomNavigationBar(
+            navController = rememberNavController(),
+            items = listOf(
+                BottomNavItem.Home,
+                BottomNavItem.Wallet,
+                BottomNavItem.History,
+                BottomNavItem.Profile
+            )
         )
     }
 }
