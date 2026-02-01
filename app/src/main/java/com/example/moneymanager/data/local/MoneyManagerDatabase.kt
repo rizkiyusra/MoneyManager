@@ -16,6 +16,7 @@ import com.example.moneymanager.data.local.recurring.RecurringTransactionDao
 import com.example.moneymanager.data.local.recurring.RecurringTransactionEntity
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionEntity
+import com.example.moneymanager.data.local.transaction.TransactionFtsEntity
 import com.example.moneymanager.data.local.transfer.TransferLinkEntity
 import com.example.moneymanager.data.local.transfer.TransferPairDao
 import com.example.moneymanager.data.local.transfer.TransferPairEntity
@@ -32,6 +33,7 @@ import com.example.moneymanager.data.local.transfer.TransferPairEntity
         TransferLinkEntity::class,
         BackupMetadataEntity::class,
         RecurringTransactionEntity::class,
+        TransactionFtsEntity::class
     ],
     version = 2,
     exportSchema = true

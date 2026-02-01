@@ -62,7 +62,6 @@ class TransactionRepositoryImpl @Inject constructor(
             }
 
             assetDao.updateAssetBalance(newTransaction.fromAssetId, newImpactAmount)
-
             transactionDao.updateTransaction(newTransaction.toEntity())
         }
     }
@@ -93,15 +92,22 @@ class TransactionRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun searchTransactions(query: String): Flow<List<Transaction>> {
+        val sanitizedQuery = "%$query%"
+        return transactionDao.searchTransactions(sanitizedQuery).map { entities ->
+            entities.map { it.toDomainSimple() }
+        }
+    }
+
     private fun TransactionWithDetails.toDomain(): Transaction {
         return Transaction(
             id = transaction.transactionId,
             fromAssetId = transaction.fromAssetId,
             toAssetId = transaction.toAssetId,
             categoryId = transaction.categoryId,
-            type = try { TransactionType.valueOf(transaction.transactionType) } catch (e: Exception) { TransactionType.EXPENSE },
+            type = try { TransactionType.valueOf(transaction.transactionType) } catch (_: Exception) { TransactionType.EXPENSE },
             categoryName = category?.categoryName ?: "Tanpa Kategori",
-            categoryIcon = category?.categoryIcon ?: "help",
+            categoryIcon = category?.categoryIcon ?: "category",
             categoryColor = category?.categoryColor ?: Color.LTGRAY,
             fromAssetName = fromAsset.assetName,
             amount = transaction.transactionAmount,
@@ -122,11 +128,11 @@ class TransactionRepositoryImpl @Inject constructor(
         fromAssetId = fromAssetId,
         toAssetId = toAssetId,
         categoryId = categoryId,
-        type = try { TransactionType.valueOf(transactionType) } catch (e: Exception) { TransactionType.EXPENSE },
-        categoryName = "Loading...",
-        categoryIcon = "help",
+        type = try { TransactionType.valueOf(transactionType) } catch (_: Exception) { TransactionType.EXPENSE },
+        categoryName = "",
+        categoryIcon = "history",
         categoryColor = Color.GRAY,
-        fromAssetName = "Asset",
+        fromAssetName = "",
         amount = transactionAmount,
         currency = transactionCurrency,
         convertedAmountIDR = convertedAmountIDR,

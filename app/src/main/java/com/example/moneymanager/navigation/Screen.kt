@@ -10,6 +10,7 @@ sealed class Screen(val route: String) {
     object Recurring : Screen("recurring_transactions")
     object Budget : Screen("budget")
     object Reports : Screen("reports")
+    object Search : Screen("search")
 
     object AddCategory : Screen("add_category?categoryId={categoryId}") {
         fun createRoute(categoryId: Int? = null): String {

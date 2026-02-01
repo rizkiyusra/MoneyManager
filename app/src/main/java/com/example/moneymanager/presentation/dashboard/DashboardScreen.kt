@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
     onNavigateToAddTransaction: (Int?) -> Unit,
     onNavigateToBudget: () -> Unit,
+    onNavigateToSearch: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -60,6 +62,7 @@ fun DashboardScreen(
         onRetry = { viewModel.retryLoading() },
         onNavigateToAddTransaction = onNavigateToAddTransaction,
         onNavigateToBudget = onNavigateToBudget,
+        onNavigateToSearch = onNavigateToSearch,
         onDeleteTransaction = { transaction ->
             viewModel.deleteTransaction(transaction)
         }
@@ -74,6 +77,7 @@ private fun DashboardContent(
     onRetry: () -> Unit,
     onDeleteTransaction: (Transaction) -> Unit,
     onNavigateToAddTransaction: (Int?) -> Unit,
+    onNavigateToSearch: () -> Unit,
     onNavigateToBudget: () -> Unit,
 ) {
     Scaffold(
@@ -82,6 +86,13 @@ private fun DashboardContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Cari Transaksi",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     IconButton(onClick = onNavigateToBudget) {
                         Icon(
                             imageVector = Icons.Default.PieChart,

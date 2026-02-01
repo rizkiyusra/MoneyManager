@@ -19,4 +19,6 @@ interface TransactionRepository {
         sourceAsset: Asset,
         destinationAsset: Asset
     )
+
+    fun searchTransactions(query: String): Flow<List<Transaction>>
 }

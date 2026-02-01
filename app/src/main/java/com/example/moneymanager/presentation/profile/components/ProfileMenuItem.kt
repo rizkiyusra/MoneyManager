@@ -17,9 +17,9 @@ import androidx.compose.ui.unit.sp
 fun ProfileMenuItem(
     icon: ImageVector,
     title: String,
-    subtitle: String? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
 ) {
     Row(
         modifier = modifier

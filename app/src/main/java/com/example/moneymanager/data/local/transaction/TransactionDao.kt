@@ -39,4 +39,12 @@ interface TransactionDao {
         AND transactionDate BETWEEN :startDate AND :endDate
     """)
     fun getExpenseByCategoryAndDate(categoryId: Int, startDate: Long, endDate: Long): Flow<Double>
+
+    @Query("""
+        SELECT transactions.*
+        FROM transactions
+        JOIN transactions_fts ON transactions.transactionId = transactions_fts.rowid
+        WHERE transactions_fts MATCH :query
+    """)
+    fun searchTransactions(query: String): Flow<List<TransactionEntity>>
 }

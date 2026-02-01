@@ -25,6 +25,7 @@ import com.example.moneymanager.presentation.category.CategoryListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
 import com.example.moneymanager.presentation.profile.ProfileScreen
 import com.example.moneymanager.presentation.recurring.RecurringListScreen
+import com.example.moneymanager.presentation.search.SearchScreen
 import com.example.moneymanager.presentation.settings.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
 
@@ -46,6 +47,20 @@ fun AppNavigation(
                 onNavigateToBudget = {
                     navController.navigate(Screen.Budget.route)
                 },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
+                }
+            )
+        }
+
+        composable(Screen.Search.route) {
+            SearchScreen(
+                navController = navController,
+                onNavigateToEdit = { transactionId ->
+                    navController.navigate(
+                        Screen.AddTransaction.createRoute(transactionId)
+                    )
+                }
             )
         }
 
@@ -77,7 +92,7 @@ fun AppNavigation(
                     defaultValue = -1
                 }
             )
-        ) {
+        ) { backStackEntry ->
             AddEditTransactionScreen(navController = navController)
         }
 
