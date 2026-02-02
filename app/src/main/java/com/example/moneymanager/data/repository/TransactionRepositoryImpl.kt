@@ -12,6 +12,7 @@ import com.example.moneymanager.data.local.transfer.TransferLinkEntity
 import com.example.moneymanager.data.local.transfer.TransferPairDao
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Transaction
+import com.example.moneymanager.domain.model.TransactionFilter
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,18 @@ class TransactionRepositoryImpl @Inject constructor(
         transactionDao.getTransactionsWithDetails().map { list ->
             list.map { it.toDomain() }
         }
+
+    override fun getFilteredTransactions(filter: TransactionFilter): Flow<List<Transaction>> {
+        return transactionDao.getFilteredTransactions(
+            startDate = filter.startDate,
+            endDate = filter.endDate,
+            type = filter.transactionType?.name,
+            categoryId = filter.categoryId,
+            assetId = filter.assetId
+        ).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
 
     override suspend fun getTransactionById(id: Int): Transaction? =
         transactionDao.getTransactionById(id)?.toDomainSimple()

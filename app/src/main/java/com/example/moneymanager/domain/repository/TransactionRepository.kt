@@ -2,6 +2,7 @@ package com.example.moneymanager.domain.repository
 
 import com.example.moneymanager.domain.model.Asset
 import com.example.moneymanager.domain.model.Transaction
+import com.example.moneymanager.domain.model.TransactionFilter
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
@@ -21,4 +22,6 @@ interface TransactionRepository {
     )
 
     fun searchTransactions(query: String): Flow<List<Transaction>>
+
+    fun getFilteredTransactions(filter: TransactionFilter): Flow<List<Transaction>>
 }

@@ -47,4 +47,23 @@ interface TransactionDao {
         WHERE transactions_fts MATCH :query
     """)
     fun searchTransactions(query: String): Flow<List<TransactionEntity>>
+
+    @Transaction
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE 
+            (:startDate IS NULL OR transactionDate >= :startDate) AND
+            (:endDate IS NULL OR transactionDate <= :endDate) AND
+            (:type IS NULL OR transactionType = :type) AND
+            (:categoryId IS NULL OR categoryId = :categoryId) AND
+            (:assetId IS NULL OR fromAssetId = :assetId)
+        ORDER BY transactionDate DESC, createdDate DESC
+    """)
+    fun getFilteredTransactions(
+        startDate: Long?,
+        endDate: Long?,
+        type: String?,
+        categoryId: Int?,
+        assetId: Int?
+    ): Flow<List<TransactionWithDetails>>
 }

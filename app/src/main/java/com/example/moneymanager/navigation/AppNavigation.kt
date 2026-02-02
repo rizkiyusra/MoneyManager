@@ -1,16 +1,8 @@
 package com.example.moneymanager.navigation
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -23,6 +15,7 @@ import com.example.moneymanager.presentation.budget.BudgetScreen
 import com.example.moneymanager.presentation.category.AddEditCategoryScreen
 import com.example.moneymanager.presentation.category.CategoryListScreen
 import com.example.moneymanager.presentation.dashboard.DashboardScreen
+import com.example.moneymanager.presentation.history.HistoryScreen
 import com.example.moneymanager.presentation.profile.ProfileScreen
 import com.example.moneymanager.presentation.recurring.RecurringListScreen
 import com.example.moneymanager.presentation.search.SearchScreen
@@ -112,8 +105,12 @@ fun AppNavigation(
             AddEditCategoryScreen(navController = navController)
         }
 
-        composable("history") {
-            PlaceholderScreen(title = "History")
+        composable(Screen.History.route) {
+            HistoryScreen(
+                onNavigateToEdit = { transactionId ->
+                    navController.navigate(Screen.AddTransaction.createRoute(transactionId))
+                }
+            )
         }
 
         composable(Screen.Profiles.route) {
@@ -126,27 +123,6 @@ fun AppNavigation(
 
         composable (Screen.Recurring.route) {
             RecurringListScreen(navController = navController)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PlaceholderScreen(title: String) {
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(title) }) }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Fitur $title Segera Hadir",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.secondary
-            )
         }
     }
 }
