@@ -18,3 +18,11 @@ fun Long.toReadableDate(): String {
         ).format(date)
     }
 }
+
+fun Long.toMonthYearString(): String {
+    val date = Date(this)
+    return SimpleDateFormat(
+        "MMMM yyyy",
+        Locale.Builder().setLanguage("id").setRegion("ID").build()
+    ).format(date)
+}

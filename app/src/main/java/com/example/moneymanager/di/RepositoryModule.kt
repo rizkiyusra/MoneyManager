@@ -58,4 +58,10 @@ abstract class RepositoryModule {
     abstract fun bindRecurringRepository(
         recurringRepositoryImpl: RecurringRepositoryImpl
     ): RecurringRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindReportRepository(
+        reportRepositoryImpl: ReportRepositoryImpl
+    ): ReportRepository
 }

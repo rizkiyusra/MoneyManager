@@ -2,6 +2,7 @@ package com.example.moneymanager.presentation.main
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -23,7 +24,8 @@ import com.example.moneymanager.navigation.Screen
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
     data object Home : BottomNavItem(Screen.Dashboard.route, "Home", Icons.Default.Home)
     data object Wallet : BottomNavItem(Screen.Assets.route, "Aset", Icons.Default.AccountBalanceWallet)
-    data object History : BottomNavItem("history", "Riwayat", Icons.Default.History)
+    data object Report : BottomNavItem(Screen.Reports.route, "Laporan", Icons.Default.BarChart)
+    data object History : BottomNavItem(Screen.History.route, "Riwayat", Icons.Default.History)
     data object Profile : BottomNavItem(Screen.Profiles.route, "Profil", Icons.Default.Person)
 }
 
@@ -37,6 +39,7 @@ fun MainScreen() {
         listOf(
             BottomNavItem.Home,
             BottomNavItem.Wallet,
+            BottomNavItem.Report,
             BottomNavItem.History,
             BottomNavItem.Profile
         )
@@ -115,6 +118,7 @@ private fun MainScreenPreview() {
             items = listOf(
                 BottomNavItem.Home,
                 BottomNavItem.Wallet,
+                BottomNavItem.Report,
                 BottomNavItem.History,
                 BottomNavItem.Profile
             )

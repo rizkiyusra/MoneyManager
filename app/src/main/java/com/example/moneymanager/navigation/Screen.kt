@@ -42,4 +42,10 @@ sealed class Screen(val route: String) {
             }
         }
     }
+
+    object CategoryDetail : Screen("category_detail/{categoryId}/{categoryName}") {
+        fun createRoute(categoryId: Int, categoryName: String): String {
+            return "category_detail/$categoryId/$categoryName"
+        }
+    }
 }

@@ -18,6 +18,8 @@ import com.example.moneymanager.presentation.dashboard.DashboardScreen
 import com.example.moneymanager.presentation.history.HistoryScreen
 import com.example.moneymanager.presentation.profile.ProfileScreen
 import com.example.moneymanager.presentation.recurring.RecurringListScreen
+import com.example.moneymanager.presentation.report.CategoryDetailScreen
+import com.example.moneymanager.presentation.report.ReportsScreen
 import com.example.moneymanager.presentation.search.SearchScreen
 import com.example.moneymanager.presentation.settings.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
@@ -123,6 +125,29 @@ fun AppNavigation(
 
         composable (Screen.Recurring.route) {
             RecurringListScreen(navController = navController)
+        }
+
+        composable (Screen.Reports.route) {
+            ReportsScreen(
+                onNavigateToDetail = { categoryId, categoryName ->
+                    navController.navigate(Screen.CategoryDetail.createRoute(categoryId, categoryName))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.CategoryDetail.route,
+            arguments = listOf(
+                navArgument("categoryId") { type = NavType.IntType },
+                navArgument("categoryName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val categoryName = backStackEntry.arguments?.getString("categoryName") ?: ""
+
+            CategoryDetailScreen(
+                navController = navController,
+                categoryName = categoryName
+            )
         }
     }
 }

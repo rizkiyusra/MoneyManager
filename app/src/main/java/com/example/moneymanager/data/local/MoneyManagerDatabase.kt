@@ -14,6 +14,7 @@ import com.example.moneymanager.data.local.price.PriceHistoryDao
 import com.example.moneymanager.data.local.price.PriceHistoryEntity
 import com.example.moneymanager.data.local.recurring.RecurringTransactionDao
 import com.example.moneymanager.data.local.recurring.RecurringTransactionEntity
+import com.example.moneymanager.data.local.report.ReportDao
 import com.example.moneymanager.data.local.transaction.TransactionDao
 import com.example.moneymanager.data.local.transaction.TransactionEntity
 import com.example.moneymanager.data.local.transaction.TransactionFtsEntity
@@ -47,4 +48,5 @@ abstract class MoneyManagerDatabase : RoomDatabase() {
     abstract fun transferPairDao(): TransferPairDao
     abstract fun backupMetadataDao(): BackupMetadataDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
+    abstract fun reportDao(): ReportDao
 }

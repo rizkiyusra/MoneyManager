@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -42,7 +41,6 @@ fun AssetListScreen(
     AssetListContent(
         state = state,
         snackbarHostState = snackbarHostState,
-        onBackClick = { navController.popBackStack() },
         onAddAssetClick = { navController.navigate(Screen.AddAsset.createRoute()) },
         onEditAsset = { asset -> navController.navigate(Screen.AddAsset.createRoute(asset.id)) },
         onDeleteAsset = { asset -> viewModel.deleteAsset(asset) },
@@ -55,7 +53,6 @@ fun AssetListScreen(
 fun AssetListContent(
     state: Resource<List<Asset>>,
     snackbarHostState: SnackbarHostState,
-    onBackClick: () -> Unit,
     onAddAssetClick: () -> Unit,
     onEditAsset: (Asset) -> Unit,
     onDeleteAsset: (Asset) -> Unit,
@@ -68,11 +65,6 @@ fun AssetListContent(
         topBar = {
             TopAppBar(
                 title = { Text("Daftar Aset Saya") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
             )
         },
         floatingActionButton = {
@@ -162,7 +154,6 @@ private fun AssetListScreenPreview() {
         AssetListContent(
             state = Resource.Success(dummyAssets),
             snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
             onAddAssetClick = {},
             onEditAsset = {},
             onDeleteAsset = {},
@@ -178,7 +169,6 @@ private fun AssetListScreenErrorPreview() {
         AssetListContent(
             state = Resource.Error("Koneksi database terputus"),
             snackbarHostState = remember { SnackbarHostState() },
-            onBackClick = {},
             onAddAssetClick = {},
             onEditAsset = {},
             onDeleteAsset = {},
