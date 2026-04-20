@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object Reports : Screen("reports")
     object Search : Screen("search")
     object History : Screen("history")
+    object Security : Screen ("security")
 
     object AddCategory : Screen("add_category?categoryId={categoryId}") {
         fun createRoute(categoryId: Int? = null): String {

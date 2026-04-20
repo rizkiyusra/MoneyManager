@@ -29,7 +29,7 @@ fun ProfileScreen(
         userName = userName,
         userStatus = userStatus,
         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
-        onSecurityClick = { /* TODO */ },
+        onSecurityClick = { navController.navigate(Screen.Security.route) },
         onBackupClick = { navController.navigate(Screen.Backup.route) },
         onAboutClick = { /* TODO */ }
     )
@@ -70,7 +70,7 @@ private fun ProfileContent(
             ProfileMenuItem(
                 icon = Icons.Default.Lock,
                 title = "Keamanan",
-                subtitle = "PIN & Sidik Jari (Segera Hadir)",
+                subtitle = "PIN & Sidik Jari",
                 onClick = onSecurityClick
             )
 

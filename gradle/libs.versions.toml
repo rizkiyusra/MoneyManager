@@ -24,6 +24,7 @@ roomKtx = "2.8.4"
 work = "2.9.1"
 vico = "2.4.3"
 gson = "2.12.1"
+biometric = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,6 +68,7 @@ vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

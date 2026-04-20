@@ -112,4 +112,5 @@ dependencies {
     implementation(libs.bundles.charting)
 
     implementation(libs.gson)
+    implementation(libs.biometric)
 }

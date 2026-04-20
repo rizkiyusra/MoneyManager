@@ -22,6 +22,7 @@ import com.example.moneymanager.presentation.recurring.RecurringListScreen
 import com.example.moneymanager.presentation.report.CategoryDetailScreen
 import com.example.moneymanager.presentation.report.ReportsScreen
 import com.example.moneymanager.presentation.search.SearchScreen
+import com.example.moneymanager.presentation.security.SecurityScreen
 import com.example.moneymanager.presentation.settings.SettingsScreen
 import com.example.moneymanager.presentation.transaction.AddEditTransactionScreen
 
@@ -153,6 +154,10 @@ fun AppNavigation(
 
         composable(Screen.Backup.route) {
             BackupScreen(navController = navController)
+        }
+
+        composable(Screen.Security.route) {
+            SecurityScreen(navController = navController)
         }
     }
 }
