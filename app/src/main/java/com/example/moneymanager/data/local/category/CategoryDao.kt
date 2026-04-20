@@ -25,4 +25,13 @@ interface CategoryDao {
 
     @Query("UPDATE categories SET usageCount = usageCount + 1 WHERE categoryId = :id")
     suspend fun incrementUsageCount(id: Int)
+
+    @Query("SELECT * FROM categories")
+    suspend fun getAllCategoriesSync(): List<CategoryEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllCategories(categories: List<CategoryEntity>)
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }

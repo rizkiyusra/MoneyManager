@@ -31,4 +31,13 @@ interface AssetDao {
 
     @Delete
     suspend fun deleteAsset(asset: AssetEntity)
+
+    @Query("SELECT * FROM assets")
+    suspend fun getAllAssetsSync(): List<AssetEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllAssets(assets: List<AssetEntity>)
+
+    @Query("DELETE FROM assets")
+    suspend fun deleteAllAssets()
 }

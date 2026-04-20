@@ -64,4 +64,10 @@ abstract class RepositoryModule {
     abstract fun bindReportRepository(
         reportRepositoryImpl: ReportRepositoryImpl
     ): ReportRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBackupDataRepository(
+        backupDataRepositoryImpl: BackupDataRepositoryImpl
+    ): BackupDataRepository
 }

@@ -66,4 +66,13 @@ interface TransactionDao {
         categoryId: Int?,
         assetId: Int?
     ): Flow<List<TransactionWithDetails>>
+
+    @Query("SELECT * FROM transactions")
+    suspend fun getAllTransactionsSync(): List<TransactionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllTransactions(transactions: List<TransactionEntity>)
+
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAllTransactions()
 }

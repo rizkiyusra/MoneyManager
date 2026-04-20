@@ -30,7 +30,7 @@ fun ProfileScreen(
         userStatus = userStatus,
         onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
         onSecurityClick = { /* TODO */ },
-        onBackupClick = { /* TODO */ },
+        onBackupClick = { navController.navigate(Screen.Backup.route) },
         onAboutClick = { /* TODO */ }
     )
 }
@@ -77,7 +77,7 @@ private fun ProfileContent(
             ProfileMenuItem(
                 icon = Icons.Default.Backup,
                 title = "Backup & Restore",
-                subtitle = "Simpan & Pulihkan Data (Segera Hadir)",
+                subtitle = "Simpan & Pulihkan Data",
                 onClick = onBackupClick
             )
 

@@ -110,4 +110,6 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
 
     implementation(libs.bundles.charting)
+
+    implementation(libs.gson)
 }

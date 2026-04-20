@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.moneymanager.presentation.asset.AddEditAssetScreen
 import com.example.moneymanager.presentation.asset.AssetListScreen
+import com.example.moneymanager.presentation.backup.BackupScreen
 import com.example.moneymanager.presentation.budget.BudgetScreen
 import com.example.moneymanager.presentation.category.AddEditCategoryScreen
 import com.example.moneymanager.presentation.category.CategoryListScreen
@@ -148,6 +149,10 @@ fun AppNavigation(
                 navController = navController,
                 categoryName = categoryName
             )
+        }
+
+        composable(Screen.Backup.route) {
+            BackupScreen(navController = navController)
         }
     }
 }
