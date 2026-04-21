@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.moneymanager.common.extension.toReadableDate
-import com.example.moneymanager.common.extension.toRupiah
+import com.example.moneymanager.common.utils.CurrencyFormatter
 import com.example.moneymanager.domain.model.Transaction
 import com.example.moneymanager.domain.model.TransactionType
 import com.example.moneymanager.presentation.theme.expense
@@ -88,9 +88,10 @@ fun TransactionItem(
             MaterialTheme.colorScheme.income
         }
         val prefix = if (isExpense) "- " else "+ "
+        val currencyCode = transaction.currency
 
         Text(
-            text = prefix + transaction.amount.toRupiah(),
+            text = prefix + CurrencyFormatter.format(transaction.amount, currencyCode),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = amountColor

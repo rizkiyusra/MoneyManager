@@ -1,17 +1,11 @@
 package com.example.moneymanager.common.extension
 
+import com.example.moneymanager.common.utils.CurrencyFormatter
 import java.text.NumberFormat
 import java.util.Locale
 
 fun Double.toRupiah(): String {
-    return try {
-        val localeID = Locale.Builder().setLanguage("id").setRegion("ID").build()
-        val numberFormat = NumberFormat.getCurrencyInstance(localeID)
-        numberFormat.maximumFractionDigits = 0
-        numberFormat.format(this)
-    } catch (_: Exception) {
-        "Rp $this"
-    }
+    return CurrencyFormatter.format(this, "IDR")
 }
 
 fun String.cleanToDouble(): Double {

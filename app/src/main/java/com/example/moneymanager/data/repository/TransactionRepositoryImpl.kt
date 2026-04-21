@@ -181,15 +181,15 @@ class TransactionRepositoryImpl @Inject constructor(
         assetName = name,
         assetType = type,
         currentBalance = balance,
-        balanceUnit = "IDR",
-        currencySymbol = "Rp",
-        accountNumber = null,
-        bankName = null,
-        lastPriceUpdate = null,
-        priceSource = null,
-        isActive = true,
-        sortOrder = 0,
-        createdDate = System.currentTimeMillis(),
-        lastModified = System.currentTimeMillis()
+        balanceUnit = unit,
+        currencySymbol = currencySymbol,
+        accountNumber = accountNumber,
+        bankName = bankName,
+        lastPriceUpdate = lastPriceUpdate,
+        priceSource = priceSource,
+        isActive = isActive,
+        sortOrder = sortOrder,
+        createdDate = createdDate,
+        lastModified = lastModified
     )
 }
